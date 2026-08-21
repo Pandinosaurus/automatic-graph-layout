@@ -15,9 +15,7 @@ using Microsoft.Msagl.Miscellaneous;
 using Microsoft.Msagl.Routing;
 using Microsoft.Msagl.Routing.Rectilinear;
 using System.Threading.Tasks;
-#if TEST_MSAGL
 using Microsoft.Msagl.DebugHelpers;
-#endif
 
 namespace Microsoft.Msagl.Layout.Initial {
     /// <summary>
@@ -50,9 +48,7 @@ namespace Microsoft.Msagl.Layout.Initial {
             Func<Cluster, LayoutAlgorithmSettings> clusterSettings) {
             ValidateArg.IsNotNull(graph, "graph");
             ValidateArg.IsNotNull(clusterSettings, "clusterSettings");
-#if TEST_MSAGL
             graph.SetDebugIds();
-#endif
             this.graph = graph;
             this.modifiedNodes = modifiedNodes;
             this.clusterSettings = clusterSettings;
@@ -157,7 +153,7 @@ namespace Microsoft.Msagl.Layout.Initial {
                 settings.MinConstraintLevel = 2;
 
             GeometryGraph newGraph = GetShallowCopyGraphUnderCluster(cluster);
-            LayoutAlgorithmHelpers.ComputeDesiredEdgeLengths(settings.IdealEdgeLength, newGraph);
+            LayoutAlgorithmHelpers.ComputeDesiredEdgeLengths(newGraph);
 
             // orthogonal ordering constraints preserve the left-of, above-of relationships between existing nodes
             // (we do not apply these to the newly added nodes)
@@ -251,8 +247,8 @@ namespace Microsoft.Msagl.Layout.Initial {
             Debug.Assert(settings.Iterations == 0);
 
             foreach (var level in Enumerable.Range(settings.MinConstraintLevel, settings.MaxConstraintLevel + 1)) {
-                if (level != fil.CurrentConstraintLevel) {
-                    fil.CurrentConstraintLevel = level;
+                if (level != fil.GetCurrentConstraintLevel()) {
+                    fil.SetCurrentConstraintLevel(level);
                     if (level == 2) {
                         settings.MinorIterations = 1;
                         settings.ApplyForces = false;

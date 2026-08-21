@@ -10,9 +10,7 @@ namespace Microsoft.Msagl.Core.Geometry.Curves {
     /// Curve: keeps a sequence of connected ICurves
     /// </summary>
 #pragma warning restore 1587
-#if TEST_MSAGL
     [Serializable]
-#endif
 #pragma warning disable 1591
     public partial class Curve : ICurve {
 #pragma warning restore 1591
@@ -224,10 +222,9 @@ namespace Microsoft.Msagl.Core.Geometry.Curves {
         public Curve AddSegment(ICurve curve) {
             if (curve == null)
                 return this; //nothing happens
-#if TEST_MSAGL
             if (segs.Count > 0 && !ApproximateComparer.Close(End, curve.Start, 0.001))
                 throw new InvalidOperationException(); //discontinuous curve
-#endif
+
             ParStart = 0;
             var c = curve as Curve;
             if (c == null) {
@@ -311,19 +308,7 @@ namespace Microsoft.Msagl.Core.Geometry.Curves {
             ValidateArg.IsNotNull(curve0, "curve0");
             ValidateArg.IsNotNull(curve1, "curve1");
             Debug.Assert(curve0 != curve1, "curve0 == curve1");
-#if TEST_MSAGL
-//            double c0S = curve0.ParStart, c1S = curve1.ParStart;
-//            if (CurvesAreCloseAtParams(curve0, curve1, c0S, c1S)) {
-//                double mc0 = 0.5 * (curve0.ParStart + curve0.ParEnd);
-//                double mc1 = 0.5 * (curve1.ParStart + curve1.ParEnd);
-//                double c0E = curve0.ParEnd;
-//                if (CurvesAreCloseAtParams(curve0, curve1, mc0, mc1)) {
-//                    double c1E = curve1.ParEnd;
-//                    CurvesAreCloseAtParams(curve0, curve1, c0E, c1E);
-//                    throw new InvalidOperationException();
-//                }
-//            }
-#endif
+
             //recurse down to find all PBLeaf pairs which intesect and try to cross their segments
 
             IntersectionInfo ret = CurveCurveXWithParallelogramNodesOne(curve0.ParallelogramNodeOverICurve,
@@ -347,20 +332,7 @@ namespace Microsoft.Msagl.Core.Geometry.Curves {
             ValidateArg.IsNotNull(curve0, "curve0");
             ValidateArg.IsNotNull(curve1, "curve1");
             Debug.Assert(curve0 != curve1);
-#if TEST_MSAGL
-//            var c0S = curve0.ParStart;
-//            var c1S = curve1.ParStart;
-//            var c0E = curve0.ParEnd;
-//            var c1E = curve1.ParEnd;
-//            if (CurvesAreCloseAtParams(curve0, curve1, c0S, c1S)) {
-//                if (CurvesAreCloseAtParams(curve0, curve1, c0E, c1E)) {
-//                    var mc0 = 0.5*(curve0.ParStart + curve0.ParEnd);
-//                    var mc1 = 0.5*(curve1.ParStart + curve1.ParEnd);
-//                    if (CurvesAreCloseAtParams(curve0, curve1, mc0, mc1))
-//                        throw new InvalidOperationException();
-//                }
-//            }
-#endif
+
 
             var lineSeg = curve0 as LineSegment;
             if (lineSeg != null)
@@ -1795,7 +1767,7 @@ namespace Microsoft.Msagl.Core.Geometry.Curves {
             return curve1 == curve2 || (CurveCurveIntersectionOne(curve1, curve2, false) != null);
         }
 
-        internal static CubicBezierSegment CreateBezierSeg(double kPrev, double kNext, Site a, Site b, Site c) {
+        internal static CubicBezierSegment CreateBezierSeg(double kPrev, double kNext, CornerSite a, CornerSite b, CornerSite c) {
             Point s = kPrev*a.Point + (1 - kPrev)*b.Point;
             Point e = kNext*c.Point + (1 - kNext)*b.Point;
             Point t = (2.0/3.0)*b.Point;
@@ -1807,7 +1779,7 @@ namespace Microsoft.Msagl.Core.Geometry.Curves {
             return new CubicBezierSegment(a, a + d, b + d, b);
         }
 
-        internal static bool FindCorner(Site a, out Site b, out Site c) {
+        internal static bool FindCorner(CornerSite a, out CornerSite b, out CornerSite c) {
             c = null; // to silence the compiler
             b = a.Next;
             if (b.Next == null)

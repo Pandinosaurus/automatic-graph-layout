@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -86,9 +86,7 @@ namespace Microsoft.Msagl.Drawing
                 WriteEdges();
                 WriteNodes();
                 
-#if TEST_MSAGL
                 WriteDebugCurves();
-#endif
                 Close();
             }
             finally
@@ -98,7 +96,6 @@ namespace Microsoft.Msagl.Drawing
                 Thread.CurrentThread.CurrentCulture = currentCulture;
             }
         }
-#if TEST_MSAGL
         void WriteDebugCurves() {
             if(_graph.DebugCurves!=null)
                 foreach (var debugCurve in _graph.DebugCurves) {
@@ -144,7 +141,6 @@ namespace Microsoft.Msagl.Drawing
                 return color;
             return "black";
         }
-#endif
         static bool LabelIsValid(Label label)
         {
             if (label == null || String.IsNullOrEmpty(label.Text) || label.Width == 0)
@@ -156,12 +152,12 @@ namespace Microsoft.Msagl.Drawing
         {
             if (!LabelIsValid(label))
                 return;
-            //need to remove these hecks. TODO
+            //need to remove the hack. TODO
             const double yScaleAdjustment = 1.5;
 
             var x = label.Center.X - label.Width / 2;
             var y = label.Center.Y + label.Height / (2 * yScaleAdjustment);
-            var fontSize = 16;
+            var fontSize = label.fontsize;
             WriteStartElement("text");
             WriteAttribute("x", x);
             WriteAttribute("y", y);
@@ -381,9 +377,7 @@ namespace Microsoft.Msagl.Drawing
                 case Shape.Ellipse:
                 case Shape.DrawFromGeometry:
                 case Shape.Hexagon:
-#if TEST_MSAGL
                 case Shape.TestShape:
-#endif
                     WriteFromMsaglCurve(node);
                     break;
 

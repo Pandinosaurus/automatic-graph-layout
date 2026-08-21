@@ -22,8 +22,8 @@ namespace Microsoft.Msagl.Drawing {
     ///     the editor of a graph layout
     /// </summary>
     public class GeometryGraphEditor {
-        readonly Set<GeomEdge> edgesDraggedWithSource = new Set<GeomEdge>();
-        readonly Set<GeomEdge> edgesDraggedWithTarget = new Set<GeomEdge>();
+        private readonly Set<GeomEdge> edgesDraggedWithSource = new Set<GeomEdge>();
+        private readonly Set<GeomEdge> edgesDraggedWithTarget = new Set<GeomEdge>();
 
         GeometryGraph graph;
         LayoutAlgorithmSettings layoutSettings;
@@ -121,7 +121,7 @@ namespace Microsoft.Msagl.Drawing {
         internal bool UndoMode {
             get { return undoMode; }
             set { undoMode = value; }
-        }
+        }   
 
 
         /// <summary>
@@ -180,20 +180,28 @@ namespace Microsoft.Msagl.Drawing {
             foreach (GeomNode node in objectsToDrag.Where(n => n is GeomNode))
                 node.Center += delta;
 
-            RectilinearInteractiveEditor.CreatePortsAndRouteEdges(LayoutSettings.NodeSeparation/3, 1, graph.Nodes,
+            RectilinearInteractiveEditor.CreatePortsAndRouteEdges(
+                LayoutSettings.NodeSeparation/3, 
+                1, 
+                graph.Nodes,
                 graph.Edges,
                 LayoutSettings.EdgeRoutingSettings.EdgeRoutingMode,
                 true,
-                LayoutSettings.EdgeRoutingSettings
-                    .UseObstacleRectangles,
                 LayoutSettings.EdgeRoutingSettings.BendPenalty);
-            var labelPlacer = new EdgeLabelPlacement(graph);
-            labelPlacer.Run();
+
+            new EdgeLabelPlacement(graph).Run();
 
             foreach (GeomEdge e in Graph.Edges)
                 UpdateGraphBoundingBoxWithCheck(e);
             foreach (GeomNode n in Graph.Nodes)
                 UpdateGraphBoundingBoxWithCheck(n);
+
+            foreach (var node in objectsToDrag.OfType<Cluster>()) {
+                node.DeepContentsTranslation(delta, false);
+                node.RectangularBoundary.TranslateRectangle(delta);
+            }
+
+            PropagateChangesToClusterParents();
         }
 
         void DragObjectsForNonRectilinearCase(Point delta, DraggingMode draggingMode) {
@@ -305,7 +313,7 @@ namespace Microsoft.Msagl.Drawing {
 
         void DragEdgeEdit(Point lastMousePosition, Point delta) {
             EditedEdge.RaiseLayoutChangeEvent(delta);
-            Site site = FindClosestCornerForEdit(EditedEdge.UnderlyingPolyline, lastMousePosition);
+            CornerSite site = FindClosestCornerForEdit(EditedEdge.UnderlyingPolyline, lastMousePosition);
             site.Point += delta;
             CreateCurveOnChangedPolyline(EditedEdge);
         }
@@ -315,7 +323,7 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="delta">delta of the drag</param>
         /// <param name="e">the modified edge</param>
         /// <param name="site"></param>
-        internal static void DragEdgeWithSite(Point delta, GeomEdge e, Site site) {
+        internal static void DragEdgeWithSite(Point delta, GeomEdge e, CornerSite site) {
             e.RaiseLayoutChangeEvent(delta);
             site.Point += delta;
             CreateCurveOnChangedPolyline(e);
@@ -424,116 +432,16 @@ namespace Microsoft.Msagl.Drawing {
                 else
                     edgesDraggedWithSource.Insert(edge);
 
-            CalculateOffsetsForMultiedges(node, LayoutSettings.NodeSeparation);
+            
             var cl = node as Cluster;
             if (cl != null)
                 foreach (var n in cl.AllSuccessorsWidthFirst())
                     AssignEdgesOfNodeToEdgeDragSets(n);
         }
 
-        internal static Dictionary<GeomEdge, double> CalculateOffsetsForMultiedges(GeomNode node, double nodeSeparation) {
-            var offsetsInsideOfMultiedge = new Dictionary<GeomEdge, double>();
-            foreach (var multiedge in GetMultiEdges(node))
-                CalculateMiddleOffsetsForMultiedge(multiedge, node, offsetsInsideOfMultiedge, nodeSeparation);
-            return offsetsInsideOfMultiedge;
-        }
+      
 
-        static void CalculateMiddleOffsetsForMultiedge(List<GeomEdge> multiedge, GeomNode node,
-            Dictionary<GeomEdge, double> offsetsInsideOfMultiedge,
-            double nodeSeparation) {
-            Dictionary<GeomEdge, double> middleAngles = GetMiddleAnglesOfMultiedge(multiedge, node);
-            var angles = new double[middleAngles.Count];
-            var edges = new GeomEdge[middleAngles.Count];
-            int i = 0;
-            foreach (var v in middleAngles) {
-                angles[i] = v.Value;
-                edges[i] = v.Key;
-                i++;
-            }
-            Array.Sort(angles, edges);
-
-            double separation = nodeSeparation*6;
-
-            int k = edges.Length/2;
-            bool even = k*2 == edges.Length;
-            double off;
-            if (even) {
-                off = -separation/2;
-                for (int j = k - 1; j >= 0; j--) {
-                    GeomEdge edge = edges[j];
-                    offsetsInsideOfMultiedge[edge] = off;
-                    off -= separation + (edge.Label != null ? edge.Label.Width : 0);
-                }
-
-                off = separation/2;
-                for (int j = k; j < edges.Length; j++) {
-                    GeomEdge edge = edges[j];
-                    offsetsInsideOfMultiedge[edge] = off;
-                    off += separation + (edge.Label != null ? edge.Label.Width : 0);
-                }
-            }
-            else {
-                off = 0;
-                for (int j = k; j >= 0; j--) {
-                    GeomEdge edge = edges[j];
-                    offsetsInsideOfMultiedge[edge] = off;
-                    off -= separation + (edge.Label != null ? edge.Label.Width : 0);
-                }
-                off = separation;
-                for (int j = k + 1; j < edges.Length; j++) {
-                    GeomEdge edge = edges[j];
-                    offsetsInsideOfMultiedge[edge] = off;
-                    off += separation + (edge.Label != null ? edge.Label.Width : 0);
-                }
-            }
-        }
-
-        static Dictionary<GeomEdge, double> GetMiddleAnglesOfMultiedge(List<GeomEdge> multiedge, GeomNode node) {
-            var ret = new Dictionary<GeomEdge, double>();
-            GeomEdge firstEdge = multiedge[0];
-
-            Point a = node.Center;
-            Point b = Middle(firstEdge.Curve);
-            ret[firstEdge] = 0;
-
-            for (int i = 1; i < multiedge.Count; i++) {
-                GeomEdge edge = multiedge[i];
-                Point c = Middle(edge.Curve);
-                double angle = Point.Angle(b, a, c);
-                if (angle > Math.PI)
-                    angle = angle - Math.PI*2;
-
-                ret[edge] = angle;
-            }
-
-            return ret;
-        }
-
-        static Point Middle(ICurve iCurve) {
-            return iCurve[iCurve.ParStart + 0.5*(iCurve.ParEnd - iCurve.ParStart)];
-        }
-
-        static IEnumerable<List<GeomEdge>> GetMultiEdges(GeomNode node) {
-            var nodeToMultiEdge = new Dictionary<GeomNode, List<GeomEdge>>();
-            foreach (GeomEdge edge in node.OutEdges)
-                GetOrCreateListOfMultiedge(nodeToMultiEdge, edge.Target).Add(edge);
-            foreach (GeomEdge edge in node.InEdges)
-                GetOrCreateListOfMultiedge(nodeToMultiEdge, edge.Source).Add(edge);
-
-            foreach (var list in nodeToMultiEdge.Values)
-                if (list.Count > 1)
-                    yield return list;
-        }
-
-        static List<GeomEdge> GetOrCreateListOfMultiedge(Dictionary<GeomNode, List<GeomEdge>> nodeToMultiEdge,
-            GeomNode node) {
-            List<GeomEdge> list;
-            if (nodeToMultiEdge.TryGetValue(node, out list))
-                return list;
-
-            return nodeToMultiEdge[node] = new List<GeomEdge>();
-        }
-
+        
         internal UndoRedoAction InsertToListAndSetTheBoxBefore(UndoRedoAction action) {
             UndoRedoActionsList.AddAction(action);
             action.GraphBoundingBoxBefore = action.Graph.BoundingBox;
@@ -552,7 +460,7 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="geometryEdge"></param>
         /// <param name="site"></param>
         /// <returns></returns>
-        public UndoRedoAction PrepareForEdgeCornerDragging(GeomEdge geometryEdge, Site site) {
+        public UndoRedoAction PrepareForEdgeCornerDragging(GeomEdge geometryEdge, CornerSite site) {
             EditedEdge = geometryEdge;
             UndoRedoAction edgeDragUndoRedoAction = CreateEdgeEditUndoRedoAction();
 //            var edgeRestoreDate = (EdgeRestoreData) edgeDragUndoRedoAction.GetRestoreData(geometryEdge);
@@ -567,7 +475,7 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="site"></param>
         /// <returns></returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Polyline")]
-        public UndoRedoAction PrepareForPolylineCornerRemoval(IViewerObject affectedEdge, Site site) {
+        public UndoRedoAction PrepareForPolylineCornerRemoval(IViewerObject affectedEdge, CornerSite site) {
             var action = new SiteRemoveUndoAction(EditedEdge) {
                 RemovedSite = site,
             };
@@ -581,7 +489,7 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="affectedObj">edited objects</param>
         /// <param name="site">the site to insert</param>
         /// <returns></returns>
-        internal UndoRedoAction PrepareForPolylineCornerInsertion(IViewerObject affectedObj, Site site) {
+        internal UndoRedoAction PrepareForPolylineCornerInsertion(IViewerObject affectedObj, CornerSite site) {
             var action = new SiteInsertUndoAction(EditedEdge) {
                 InsertedSite = site,
             };
@@ -635,9 +543,9 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="edge"></param>
         /// <param name="point"></param>
         /// <returns></returns>
-        public static Site GetPreviousSite(GeomEdge edge, Point point) {
-            Site prevSite = edge.UnderlyingPolyline.HeadSite;
-            Site nextSite = prevSite.Next;
+        public static CornerSite GetPreviousSite(GeomEdge edge, Point point) {
+            CornerSite prevSite = edge.UnderlyingPolyline.HeadSite;
+            CornerSite nextSite = prevSite.Next;
             do {
                 if (BetweenSites(prevSite, nextSite, point))
                     return prevSite;
@@ -647,7 +555,7 @@ namespace Microsoft.Msagl.Drawing {
             return null;
         }
 
-        static bool BetweenSites(Site prevSite, Site nextSite, Point point) {
+        static bool BetweenSites(CornerSite prevSite, CornerSite nextSite, Point point) {
             double par = Point.ClosestParameterOnLineSegment(point, prevSite.Point, nextSite.Point);
             return par > 0.1 && par < 0.9;
         }
@@ -659,12 +567,12 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="point">the point to insert the corner</param>
         /// <param name="siteBeforeInsertion"></param>
         /// <param name="affectedEntity">an object to be stored in the undo action</param>
-        public void InsertSite(GeomEdge edge, Point point, Site siteBeforeInsertion, IViewerObject affectedEntity) {
+        public void InsertSite(GeomEdge edge, Point point, CornerSite siteBeforeInsertion, IViewerObject affectedEntity) {
             EditedEdge = edge;
             //creating the new site
-            Site first = siteBeforeInsertion;
-            Site second = first.Next;
-            var s = new Site(first, point, second);
+            CornerSite first = siteBeforeInsertion;
+            CornerSite second = first.Next;
+            var s = new CornerSite(first, point, second);
             PrepareForPolylineCornerInsertion(affectedEntity, s);
 
             //just to recalc everything in a correct way
@@ -677,7 +585,7 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="edge"></param>
         /// <param name="site"></param>
         /// <param name="userData">an object to be stored in the unde action</param>
-        public void DeleteSite(GeomEdge edge, Site site, IViewerObject userData) {
+        public void DeleteSite(GeomEdge edge, CornerSite site, IViewerObject userData) {
             EditedEdge = edge;
             PrepareForPolylineCornerRemoval(userData, site);
             site.Previous.Next = site.Next; //removing the site from the list
@@ -695,8 +603,8 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="tolerance"></param>
         /// <returns></returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Polyline")]
-        public static Site FindCornerForEdit(SmoothedPolyline underlyingPolyline, Point mousePoint, double tolerance) {
-            Site site = underlyingPolyline.HeadSite.Next;
+        public static CornerSite FindCornerForEdit(SmoothedPolyline underlyingPolyline, Point mousePoint, double tolerance) {
+            CornerSite site = underlyingPolyline.HeadSite.Next;
             tolerance *= tolerance; //square the tolerance
 
             do {
@@ -718,8 +626,8 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="mousePoint"></param>
         /// <returns></returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Polyline")]
-        static Site FindClosestCornerForEdit(SmoothedPolyline underlyingPolyline, Point mousePoint) {
-            var site = underlyingPolyline.HeadSite.Next;
+        static CornerSite FindClosestCornerForEdit(SmoothedPolyline underlyingPolyline, Point mousePoint) {
+            var site = underlyingPolyline.HeadSite;
             var bestSite = site;
             var dist = (bestSite.Point - mousePoint).LengthSquared;
             while (site.Next != null) {

@@ -40,7 +40,6 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
         Func<Port, Polyline> loosePolylineOfPort;
     
-#if TEST_MSAGL
         void CheckGraph() {
             foreach (var e in geometryGraph.Edges) {
                 if (e.Source == e.Target)
@@ -54,7 +53,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             if (node is Cluster)
                 Debug.Assert(nodePort is ClusterBoundaryPort || nodePort is HookUpAnywhereFromInsidePort || nodePort is CurvePort);
         }
-#endif
+
 
         internal BundleRouter(GeometryGraph geometryGraph, SdShortestPath shortestPathRouter,
                               VisibilityGraph visibilityGraph, BundlingSettings bundlingSettings, double loosePadding, RectangleNode<Polyline, Point> tightHierarchy,
@@ -93,7 +92,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
                 LayoutAlgorithmSettings.ShowDebugCurves(
                     TightHierarchy.GetAllLeaves().Select(p => new DebugCurve(100, 1, "black", p)).ToArray());*/
                 Status = BundlingStatus.Overlaps;
-                TimeMeasurer.DebugOutput("overlaps in edge bundling");
+                //TimeMeasurer.DebugOutput("overlaps in edge bundling");
                 return;
             }
 
@@ -109,7 +108,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
                                                         LooseHierarchy,
                                                         TightHierarchy,
                                                         bundlingSettings,
-                                                        shortestPathRouter.Cdt,
+                                                        shortestPathRouter.CdtProperty,
                                                         EdgeLooseEnterable,
                                                         EdgeTightEnterable,
                                                         loosePolylineOfPort);
@@ -144,14 +143,10 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             IEnumerable<Polyline> obstacles = looseHierarchy.GetAllLeaves();
 
             Rectangle rectangle = (Rectangle)looseHierarchy.Rectangle;
-            double d = rectangle.Diagonal / 4;
-            Point lb = rectangle.LeftBottom + new Point(-d, -d);
-            Point lt = rectangle.LeftTop + new Point(-d, d);
-            Point rt = rectangle.RightTop + new Point(d, d);
-            Point rb = rectangle.RightBottom + new Point(d, -d);
+            rectangle.Pad(rectangle.Diagonal / 4);
 
-            var additionalObstacles = new[] { 
-                new Polyline(lb, lt, rt, rb) { Closed = true }};
+            var additionalObstacles = new[] {
+                rectangle.Perimeter() };
 
             return GetConstrainedDelaunayTriangulation(obstacles.Concat(additionalObstacles));
         }
@@ -161,7 +156,6 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             constrainedDelaunayTriangulation.Run();
             return constrainedDelaunayTriangulation;
         }
-#if TEST_MSAGL
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         // ReSharper disable UnusedMember.Local
         void ShowGraphLocal() {
@@ -177,7 +171,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             }
             SplineRouter.ShowVisGraph(VisibilityGraph, LooseHierarchy.GetAllLeaves(), null, l);
         }
-#endif
+
 
         void FixLocationsForHookAnywherePorts(IEnumerable<Edge> edges) {
             foreach (var edge in edges) {
@@ -237,7 +231,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             shortestPathRouter.RouteEdges();
 
             //find appropriate edge separation
-            if (shortestPathRouter.Cdt != null)
+            if (shortestPathRouter.CdtProperty != null)
                 if (!AnalyzeEdgeSeparation())
                     return false;
             return true;
@@ -262,7 +256,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
                 return true; //we can even enlarge it here
 
             if (es <= 0.02) {
-                TimeMeasurer.DebugOutput("edge bundling can't be executed: not enough free space around obstacles");
+                //TimeMeasurer.DebugOutput("edge bundling can't be executed: not enough free space around obstacles");
                 foreach (var e in regularEdges)
                     e.Curve = null;
 

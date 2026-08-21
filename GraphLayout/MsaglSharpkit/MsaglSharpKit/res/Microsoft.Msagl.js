@@ -7692,11 +7692,11 @@ var Microsoft$Msagl$Core$Layout$LgNodeInfo = {
     staticDefinition: {
         GetLabelOffset: function (placement){
             switch (placement){
-                case Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Top:
+                case Microsoft.Msagl.Core.Layout.LabelPlacement.Top:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(0, 0.5);
-                case Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Bottom:
+                case Microsoft.Msagl.Core.Layout.LabelPlacement.Bottom:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(0, -0.5);
-                case Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Left:
+                case Microsoft.Msagl.Core.Layout.LabelPlacement.Left:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(-0.5, 0);
                 default:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(0.5, 0);
@@ -7713,7 +7713,7 @@ var Microsoft$Msagl$Core$Layout$LgNodeInfo = {
             this.SelectedNeighbor = 0;
             this.LabelVisibleFromScale = 0;
             this.LabelWidthToHeightRatio = 1;
-            this.LabelPosition = Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Top;
+            this.LabelPosition = Microsoft.Msagl.Core.Layout.LabelPlacement.Top;
             this.Color = null;
             this._GeometryNode = null;
             this._BoundaryOnLayer = null;
@@ -7745,11 +7745,11 @@ var Microsoft$Msagl$Core$Layout$LgNodeInfo = {
         LabelOffset$$: "Microsoft.Msagl.Core.Geometry.Point",
         get_LabelOffset: function (){
             switch (this.LabelPosition){
-                case Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Top:
+                case Microsoft.Msagl.Core.Layout.LabelPlacement.Top:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(0, 0.5);
-                case Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Bottom:
+                case Microsoft.Msagl.Core.Layout.LabelPlacement.Bottom:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(0, -0.5);
-                case Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Left:
+                case Microsoft.Msagl.Core.Layout.LabelPlacement.Left:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(-0.5, 0);
                 default:
                     return new Microsoft.Msagl.Core.Geometry.Point.ctor$$Double$$Double(0.5, 0);
@@ -7757,16 +7757,16 @@ var Microsoft$Msagl$Core$Layout$LgNodeInfo = {
         },
         set_LabelOffset: function (value){
             if (System.Math.Abs$$Double(value.get_X()) < 0.1 && value.get_Y() > 0.4){
-                this.LabelPosition = Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Top;
+                this.LabelPosition = Microsoft.Msagl.Core.Layout.LabelPlacement.Top;
             }
             else if (System.Math.Abs$$Double(value.get_X()) < 0.1 && value.get_Y() < -0.4){
-                this.LabelPosition = Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Bottom;
+                this.LabelPosition = Microsoft.Msagl.Core.Layout.LabelPlacement.Bottom;
             }
             else if (System.Math.Abs$$Double(value.get_Y()) < 0.1 && value.get_X() > 0.4){
-                this.LabelPosition = Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Right;
+                this.LabelPosition = Microsoft.Msagl.Core.Layout.LabelPlacement.Right;
             }
             else {
-                this.LabelPosition = Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Left;
+                this.LabelPosition = Microsoft.Msagl.Core.Layout.LabelPlacement.Left;
             }
         },
         BoundaryOnLayer$$: "Microsoft.Msagl.Core.Geometry.Curves.Polyline",
@@ -13788,7 +13788,7 @@ var Microsoft$Msagl$Layout$LargeGraphLayout$LgInteractor = {
             this._runInParallel = true;
             this._railGraph = null;
             this._visibleRectangle = new Microsoft.Msagl.Core.Geometry.Rectangle.ctor();
-            this.SelectedNodeLabels = new System.Collections.Generic.Dictionary$2.ctor(Microsoft.Msagl.Core.Layout.LgNodeInfo.ctor, Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.ctor);
+            this.SelectedNodeLabels = new System.Collections.Generic.Dictionary$2.ctor(Microsoft.Msagl.Core.Layout.LgNodeInfo.ctor, Microsoft.Msagl.Core.Layout.LabelPlacement.ctor);
             this.tileNodes = new System.Collections.Generic.Dictionary$2.ctor(System.Int32.ctor, System.Collections.Generic.List$1.ctor);
             this.maxdepth = 7;
             this.maxtiles = 21845;
@@ -16262,10 +16262,10 @@ var Microsoft$Msagl$Layout$LargeGraphLayout$LgInteractor = {
                 if (node.LabelVisibleFromScale <= scale){
                     continue;
                 }
-                var positions = [Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Bottom, Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Right, Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Left, Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Top];
+                var positions = [Microsoft.Msagl.Core.Layout.LabelPlacement.Bottom, Microsoft.Msagl.Core.Layout.LabelPlacement.Right, Microsoft.Msagl.Core.Layout.LabelPlacement.Left, Microsoft.Msagl.Core.Layout.LabelPlacement.Top];
                 var couldPlace = false;
                 var labelRect = new Microsoft.Msagl.Core.Geometry.Rectangle.ctor();
-                var pl = Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Bottom;
+                var pl = Microsoft.Msagl.Core.Layout.LabelPlacement.Bottom;
                 for (var $i272 = 0,$l272 = positions.length,placement = positions[$i272]; $i272 < $l272; $i272++, placement = positions[$i272]){
                     pl = placement;
                     labelRect = this.GetLabelRectForScale$$LgNodeInfo$$LabelPlacement$$Double(node, pl, scale);
@@ -16305,7 +16305,7 @@ var Microsoft$Msagl$Layout$LargeGraphLayout$LgInteractor = {
                 if (node.LabelVisibleFromScale > 0 && node.LabelVisibleFromScale < scale){
                     continue;
                 }
-                var positions = [Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Bottom, Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Right, Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Left, Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Top];
+                var positions = [Microsoft.Msagl.Core.Layout.LabelPlacement.Bottom, Microsoft.Msagl.Core.Layout.LabelPlacement.Right, Microsoft.Msagl.Core.Layout.LabelPlacement.Left, Microsoft.Msagl.Core.Layout.LabelPlacement.Top];
                 var couldPlace = false;
                 var labelRect = new Microsoft.Msagl.Core.Geometry.Rectangle.ctor();
                 for (var $i275 = 0,$l275 = positions.length,placement = positions[$i275]; $i275 < $l275; $i275++, placement = positions[$i275]){
@@ -80150,7 +80150,7 @@ var Microsoft$Msagl$Core$Layout$EdgeLabelPlacement$PointComparer = {
 };
 JsTypes.push(Microsoft$Msagl$Core$Layout$EdgeLabelPlacement$PointComparer);
 var Microsoft$Msagl$Core$Layout$LgNodeInfo$LabelPlacement = {
-    fullname: "Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement",
+    fullname: "Microsoft.Msagl.Core.Layout.LabelPlacement",
     staticDefinition: {
         Top: 0,
         Bottom: 1,

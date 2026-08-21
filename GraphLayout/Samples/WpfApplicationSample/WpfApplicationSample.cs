@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,11 +8,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using Microsoft.Msagl.Core.Geometry.Curves;
 using Microsoft.Msagl.Core.Routing;
 using Microsoft.Msagl.Drawing;
+using Microsoft.Msagl.Layout.Layered;
 using Microsoft.Msagl.WpfGraphControl;
 using Microsoft.Win32;
 using Color = Microsoft.Msagl.Drawing.Color;
+using LabelPlacement = Microsoft.Msagl.Core.Layout.LabelPlacement;
+
 using ModifierKeys = System.Windows.Input.ModifierKeys;
 using Size = System.Windows.Size;
 
@@ -39,9 +43,7 @@ namespace WpfApplicationSample
 
         protected override void OnStartup(StartupEventArgs e)
         {
-#if TEST_MSAGL
      //       Microsoft.Msagl.GraphViewerGdi.DisplayGeometryGraph.SetShowFunctions();
-#endif
 
             appWindow = new Window {
                 Title = "WpfApplicationSample",
@@ -289,24 +291,36 @@ namespace WpfApplicationSample
                 Graph graph = new Graph();
                 graph.AddEdge("47", "58");
                 graph.AddEdge("70", "71");
+                var tn = graph.AddNode("test");
 
-
+                graph.AddEdge("test", "47");
 
                 var subgraph = new Subgraph("subgraph1");
+                subgraph.Label.Text = "Outer";
                 graph.RootSubgraph.AddSubgraph(subgraph);
                 subgraph.AddNode(graph.FindNode("47"));
                 subgraph.AddNode(graph.FindNode("58"));
 
                 var subgraph2 = new Subgraph("subgraph2");
+                subgraph2.Label.Text = "Inner";
                 subgraph2.Attr.Color = Color.Black;
                 subgraph2.Attr.FillColor = Color.Yellow;
+                subgraph2.Attr.ClusterLabelMargin = LabelPlacement.Bottom;
                 subgraph2.AddNode(graph.FindNode("70"));
                 subgraph2.AddNode(graph.FindNode("71"));
                 subgraph.AddSubgraph(subgraph2);
                 graph.AddEdge("58", subgraph2.Id);
+
                 graph.Attr.LayerDirection = LayerDirection.LR;
-                graphViewer.Graph = graph;
+                //graph.LayoutAlgorithmSettings.EdgeRoutingSettings.EdgeRoutingMode = EdgeRoutingMode.Rectilinear;
                 
+                var global = (SugiyamaLayoutSettings) graph.LayoutAlgorithmSettings;
+                var local  = (SugiyamaLayoutSettings) global.Clone();
+                local.Transformation = PlaneTransformation.Rotation(-Math.PI / 2);
+                subgraph2.LayoutSettings = local;   // for Collapsing\Expanding
+                global.ClusterSettings.Add(subgraph2, local);
+
+                graphViewer.Graph = graph;
             }
             catch (Exception e)
             {

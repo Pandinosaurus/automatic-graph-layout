@@ -199,7 +199,7 @@ namespace Microsoft.Msagl.Core.Geometry
                             this.Padding, this.PaddingP, this.ClusterPadding, this.ClusterPaddingP,
                             openBorderInfo, closeBorderInfo, openBorderInfoP, closeBorderInfoP);
             this.nextNodeId += OverlapRemovalCluster.NumInternalNodes;
-            if (null == parentCluster)
+            if (parentCluster == null)
             {
                 this.clusterHierarchies.Add(newCluster);
             }
@@ -230,9 +230,7 @@ namespace Microsoft.Msagl.Core.Geometry
             if (node is OverlapRemovalCluster)
             {
                 throw new InvalidOperationException(
-#if TEST_MSAGL
-                        "Argument 'node' must not be a Cluster"
-#endif // TEST_MSAGL
+                        "Argument 'node' must not be a Cluster" // TEST_MSAGL
                         );
             }
             cluster.AddNode(node);
@@ -247,7 +245,7 @@ namespace Microsoft.Msagl.Core.Geometry
         public void Generate(ProjectionSolver.Solver solver, OverlapRemovalParameters parameters)
         {
             ValidateArg.IsNotNull(solver, "solver");
-            if (null == parameters)
+            if (parameters == null)
             {
                 parameters = new OverlapRemovalParameters();
             }
@@ -273,11 +271,11 @@ namespace Microsoft.Msagl.Core.Geometry
         public ProjectionSolver.Solution Solve(ProjectionSolver.Solver solver,
                                     OverlapRemovalParameters parameters, bool doGenerate)
         {
-            if (null == solver)
+            if (solver == null)
             {
                 solver = new ProjectionSolver.Solver();
             }
-            if (null == parameters)
+            if (parameters == null)
             {
                 parameters = new OverlapRemovalParameters();
             }

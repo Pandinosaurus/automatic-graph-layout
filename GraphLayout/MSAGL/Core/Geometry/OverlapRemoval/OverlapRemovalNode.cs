@@ -134,27 +134,21 @@ namespace Microsoft.Msagl.Core.Geometry
             if (weight <= 0)
             {
                 throw new ArgumentOutOfRangeException("weight"
-#if TEST_MSAGL
-                        , "Invalid node properties"
-#endif // TEST_MSAGL
+                        , "Invalid node properties" // TEST_MSAGL
                         );
             }
             double dblCheck = (Math.Abs(position) + size) * weight;
             if (double.IsInfinity(dblCheck) || double.IsNaN(dblCheck))
             {
                 throw new ArgumentOutOfRangeException("position"
-#if TEST_MSAGL
-                        , "Invalid node properties"
-#endif // TEST_MSAGL
+                        , "Invalid node properties" // TEST_MSAGL
                         );
             }
             dblCheck = (Math.Abs(positionP) + sizeP) * weight;
             if (double.IsInfinity(dblCheck) || double.IsNaN(dblCheck))
             {
                 throw new ArgumentOutOfRangeException("positionP"
-#if TEST_MSAGL
-                        , "Invalid node properties"
-#endif // TEST_MSAGL
+                        , "Invalid node properties" // TEST_MSAGL
                         );
             }
             this.Id = id;
@@ -197,7 +191,7 @@ namespace Microsoft.Msagl.Core.Geometry
             ValidateArg.IsNotNull(solver, "solver");
             // Due to multiple hierarchies, we must check to see if the variable has been created yet;
             // we share one Node (and its single Variable) across all clusters it's a member of.
-            if (null == this.Variable)
+            if (this.Variable == null)
             {
                 this.Variable = solver.AddVariable(this /* userData */, this.Position, this.Weight);
             }
@@ -271,12 +265,10 @@ namespace Microsoft.Msagl.Core.Geometry
         public int CompareTo(object obj)
         {
             var rhs = obj as OverlapRemovalNode;
-            if (null == rhs)
+            if (rhs == null)
             {
                 throw new InvalidOperationException(
-#if TEST_MSAGL
-                        "Argument 'obj' must be a Node"
-#endif // TEST_MSAGL
+                        "Argument 'obj' must be a Node" // TEST_MSAGL
 );
             }
             return this.CompareTo(rhs);
@@ -299,8 +291,8 @@ namespace Microsoft.Msagl.Core.Geometry
             return (this.CompareTo(obj) == 0);
         }
         public static bool operator == (Node lhs, Node rhs) {
-            if (null == (object)lhs) {          // Cast to object to avoid recursive op==
-                return (null == (object)rhs);
+            if ((object)lhs == null) {          // Cast to object to avoid recursive op==
+                return ((object)rhs == null);
             }
             return lhs.Equals(rhs);
         }
@@ -316,25 +308,4 @@ namespace Microsoft.Msagl.Core.Geometry
         #endregion // RequiredOverridesForIComparable
 #endif // NOTNEEDED_FXCOP
     } // end class Node
-
-    // NodeComparer is used by the RBTree.
-    internal class NodeComparer : IComparer<OverlapRemovalNode>
-    {
-        #region IComparer<Node> Members
-        /// <summary>
-        /// Compare the points by point ActualPos in ascending left-to-right order.
-        /// </summary>
-        /// <param name="lhs">Left-hand side of the comparison.</param>
-        /// <param name="rhs">Right-hand side of the comparison.</param>
-        /// <returns>-1 if lhs is less than rhs; +1 if lhs is greater than rhs; else 0.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1307:SpecifyStringComparison", MessageId = "System.String.CompareTo(System.String)")]
-        public int Compare(OverlapRemovalNode lhs, OverlapRemovalNode rhs)
-        {
-            ValidateArg.IsNotNull(lhs, "lhs");
-            ValidateArg.IsNotNull(rhs, "rhs");
-
-            return lhs.CompareTo(rhs);
-        }
-        #endregion // IComparer<Node> Members
-    }
 }

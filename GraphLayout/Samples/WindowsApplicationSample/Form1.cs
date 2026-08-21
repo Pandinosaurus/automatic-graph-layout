@@ -33,6 +33,7 @@ namespace WindowsApplicationSample {
             gViewer.MouseDown += WaMouseDown;
             gViewer.MouseUp += WaMouseUp;
             gViewer.MouseMove += GViewerOnMouseMove;
+            gViewer.LayoutEditingEnabled = true;
         }
 
         void GViewerOnMouseMove(object sender, MouseEventArgs mouseEventArgs) {
@@ -104,9 +105,7 @@ namespace WindowsApplicationSample {
         void Form1Load(object sender, EventArgs e) {
             gViewer.ObjectUnderMouseCursorChanged += GViewerObjectUnderMouseCursorChanged;
 
-#if TEST_MSAGL
             //DisplayGeometryGraph.SetShowFunctions();
-#endif
 
             /////  CreateGraph();
         }
@@ -135,16 +134,16 @@ namespace WindowsApplicationSample {
                     //         here we can use e.Attr.Id or e.UserData to get back to the user data
                     gViewer.SetToolTip(toolTip1, String.Format("edge from {0} to {1}", edge.Source, edge.Target));
                 }
-                else if (selectedObject is Microsoft.Msagl.Drawing.Node) {
-                    selectedObjectAttr = (gViewer.SelectedObject as Microsoft.Msagl.Drawing.Node).Attr.Clone();
-                    (selectedObject as Microsoft.Msagl.Drawing.Node).Attr.Color = Color.Green;
+                else if (selectedObject is Node) {
+                    selectedObjectAttr = (selectedObject as Node).Attr.Clone();
+                    (selectedObject as Node).Attr.Color = Color.Green;
                     // //   here you can use e.Attr.Id to get back to your data
                     gViewer.SetToolTip(toolTip1,
                                        String.Format("node {0}",
                                                      (selectedObject as Microsoft.Msagl.Drawing.Node).Attr.Id));
                     gViewer.Invalidate(e.NewObject);
                 }
-                label1.Text = selectedObject.ToString();                
+                label1.Text = selectedObject.ToString();
             }
 
             label1.Refresh();
@@ -152,17 +151,17 @@ namespace WindowsApplicationSample {
 
         void RestoreSelectedObjAttr() {
             var edge = selectedObject as Edge;
-            if (edge != null) {
-                edge.Attr = (EdgeAttr)selectedObjectAttr;
+            if (edge != null && selectedObjectAttr is EdgeAttr atr) {
+                edge.Attr = atr;
             }
             else {
                 var node = selectedObject as Microsoft.Msagl.Drawing.Node;
-                if (node != null)
-                    node.Attr = (NodeAttr)selectedObjectAttr;
-
+                if (node != null && selectedObjectAttr is NodeAttr attr)
+                    node.Attr = attr;
             }
-
         }
+
+    
 
 
         void Button1Click(object sender, EventArgs e) {
@@ -223,7 +222,7 @@ namespace WindowsApplicationSample {
                     cluster.AddNode(node);
                 }
                 if (horizontal)
-                    cluster.Attr.ClusterLabelMargin = Microsoft.Msagl.Core.Layout.LgNodeInfo.LabelPlacement.Right;
+                    cluster.Attr.ClusterLabelMargin = Microsoft.Msagl.Core.Layout.LabelPlacement.Right;
                 graph.RootSubgraph.AddSubgraph(cluster);
             }
 
@@ -287,9 +286,7 @@ namespace WindowsApplicationSample {
         }
 
         void CreateGraph() {
-#if TEST_MSAGL
             DisplayGeometryGraph.SetShowFunctions();
-#endif
             //Graph graph = new Graph();
             //graph.AddEdge("47", "58");
             //graph.AddEdge("70", "71");
@@ -327,20 +324,20 @@ namespace WindowsApplicationSample {
             var e = graph.AddEdge("4", "5");
             e.Attr.Color = Color.Red;
             e.Attr.LineWidth *= 2;
-            graph.LayerConstraints.AddUpDownVerticalConstraint(graph.FindNode("4"), graph.FindNode("5"));
-            StraightenEdge(e, graph);
+            //graph.LayerConstraints.AddUpDownVerticalConstraint(graph.FindNode("4"), graph.FindNode("5"));
+            //StraightenEdge(e, graph);
             e = graph.AddEdge("4", "6");
             e.LabelText = "Changing label";
             this.labelToChange = e.Label;
             e = graph.AddEdge("7", "8");
             e.Attr.LineWidth *= 2;
             e.Attr.Color = Color.Red;
-            StraightenEdge(e, graph);
+            //StraightenEdge(e, graph);
             graph.AddEdge("7", "9");
             e = graph.AddEdge("5", "7");
             e.Attr.Color = Color.Red;
             e.Attr.LineWidth *= 2;
-            StraightenEdge(e, graph);
+            //StraightenEdge(e, graph);
 
             graph.AddEdge("2", "7");
             graph.AddEdge("10", "11");
@@ -369,7 +366,7 @@ namespace WindowsApplicationSample {
             e = graph.AddEdge("8", "22");
             e.Attr.Color = Color.Red;
             e.Attr.LineWidth *= 2;
-            StraightenEdge(e, graph);
+            //StraightenEdge(e, graph);
             graph.AddEdge("20", "22");
             graph.AddEdge("25", "26");
             graph.AddEdge("25", "27");

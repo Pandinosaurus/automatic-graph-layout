@@ -9,9 +9,7 @@ namespace Microsoft.Msagl.Core.Geometry{
     /// <summary>
     /// Just a rectangle
     /// </summary>
-#if TEST_MSAGL
     [Serializable]
-#endif
 #pragma warning disable CS0660 // Type defines operator == or operator != but does not override Object.Equals(object o)
 #pragma warning disable CS0661 // Type defines operator == or operator != but does not override Object.GetHashCode()
     public struct Rectangle : IRectangle<Point> {
@@ -455,16 +453,16 @@ namespace Microsoft.Msagl.Core.Geometry{
         /// pad the rectangle by the given padding
         /// </summary>
         /// <param name="padding"></param>
-        public void Pad(double padding) {
+        public Rectangle Pad(double padding) {
             if (padding < -Width / 2)
                 padding = -Width / 2;
             if (padding < -Height / 2)
                 padding = -Height / 2;
 
 
-
             PadWidth(padding);
             PadHeight(padding);
+            return this;
         }
 
         /// <summary>

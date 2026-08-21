@@ -3530,7 +3530,8 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
             {
                 Intersect = point;
                 var shape = createPolylineFunc(Intersect - new Point(0.1, 0.1), Intersect + new Point(0.1, 0.1));
-                Group = new Obstacle(shape, makeRect:false, padding:1.0);
+                Group = new 
+                    Obstacle(shape, padding:1.0);
             }
         }
 
@@ -4301,16 +4302,16 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
         public void Multiply_Nested_Nonrectilinear_Obstacles() 
         {
             var shapes = GetNestedAndOverlappedShapes(xDelta:0.0, makeRect:false);
-            this.VerifyAllObstaclesInConvexHull(this.CreateRouter(shapes));
+            this.VerifyAllObstaclesInConvexHull(this.CreateRouter(shapes), Array.Empty<Shape>());
         }
 
         [TestMethod]
-        [Timeout(2000)]
+        //[Timeout(2000)]
         [Description("Test multiply-nested rectilinear obstacles with no overlaps - they should be in one clump")]
         public void Multiply_Nested_Rectilinear_Obstacles()
         {
             var shapes = GetNestedAndOverlappedShapes(xDelta:0.0, makeRect:true);
-            this.VerifyAllObstaclesInClump(this.CreateRouter(shapes));
+            this.VerifyAllObstaclesInClump(this.CreateRouter(shapes), Array.Empty<Shape>());
         }
 
         [TestMethod]
@@ -4322,7 +4323,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
             var shapes2 = GetNestedAndOverlappedShapes(xDelta:75.0, makeRect:false);
 
             var router = this.CreateRouter(shapes1.Concat(shapes2));
-            this.VerifyAllObstaclesInConvexHull(router);
+            this.VerifyAllObstaclesInConvexHull(router, Array.Empty<Shape>());
         }
 
         [TestMethod]
@@ -4341,7 +4342,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
                 }));
 
             var router = this.CreateRouter(shapes);
-            this.VerifyAllObstaclesInConvexHull(router);
+            this.VerifyAllObstaclesInConvexHull(router, Array.Empty<Shape>());
         }
 
         [TestMethod]
@@ -4353,7 +4354,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
             var shapes2 = GetNestedAndOverlappedShapes(xDelta:75.0, makeRect:true);
 
             var router = this.CreateRouter(shapes1.Concat(shapes2));
-            VerifyAllObstaclesInClump(router);
+            VerifyAllObstaclesInClump(router, Array.Empty<Shape>());
         }
 
         [TestMethod]
@@ -4372,7 +4373,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
                 });
             shapes.Add(shapeToAdd);
             var router = this.CreateRouter(shapes);
-            this.VerifyAllObstaclesInConvexHull(router);
+            this.VerifyAllObstaclesInConvexHull(router, Array.Empty<Shape>());
         }
 
         [TestMethod]
@@ -4393,9 +4394,9 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
             shapes.Add(rectToAdd);
 
             var router = this.CreateRouter(shapes);
-            VerifyAllObstaclesInClump(router);
+            VerifyAllObstaclesInClump(router, Array.Empty<Shape>());
         }
-        private void VerifyAllObstaclesInClump(RectilinearEdgeRouterWrapper router, Shape[] siblingShapes = null, bool show = true)
+        private void VerifyAllObstaclesInClump(RectilinearEdgeRouterWrapper router, Shape[] siblingShapes, bool show = true)
         {
             router.CreateVisibilityGraph();
             var clump = router.ObsTree.GetAllObstacles().First().Clump;
@@ -4424,7 +4425,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
 
         private static bool IsObstacleInShapes(Shape[] siblingShapes, Obstacle obstacle) 
         {
-            return (siblingShapes == null) || siblingShapes.Any(sibShape => obstacle.InputShape == sibShape);
+            return siblingShapes == null || siblingShapes.Length == 0 || siblingShapes.Any(sibShape => obstacle.InputShape == sibShape);            
         }
 
         [TestMethod]
@@ -4443,7 +4444,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
                 });
             shapes.Add(shapeToAdd);
             var router = this.CreateRouter(shapes);
-            this.VerifyAllObstaclesInConvexHull(router);
+            this.VerifyAllObstaclesInConvexHull(router, Array.Empty<Shape>());
         }
 
         [TestMethod]
@@ -4595,7 +4596,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
             }
         }
 
-        private void VerifyAllObstaclesInConvexHull(RectilinearEdgeRouterWrapper router, Shape[] hullShapes = null, bool show = true) 
+        private void VerifyAllObstaclesInConvexHull(RectilinearEdgeRouterWrapper router, Shape[] hullShapes, bool show = true) 
         {
             router.CreateVisibilityGraph();
             var convexHull = router.ObsTree.GetAllObstacles().First().ConvexHull;

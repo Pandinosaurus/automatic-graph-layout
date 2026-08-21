@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows.Forms;
 using DebugCurveViewer;
 using Dot2Graph;
@@ -33,9 +35,7 @@ using Node = Microsoft.Msagl.Core.Layout.Node;
 using Path = System.IO.Path;
 using Shape = Microsoft.Msagl.Routing.Shape;
 using Size = System.Drawing.Size;
-#if TEST_MSAGL
 using Timer = Microsoft.Msagl.DebugHelpers.Timer;
-#endif
 //using Timer = Microsoft.Msagl.Timer;
 
 namespace TestForGdi {
@@ -55,10 +55,8 @@ namespace TestForGdi {
             bool show = true;
             EdgeRoutingMode edgeRoutingMode = EdgeRoutingMode.SugiyamaSplines;
             bool useSparseVisibilityGraph = false;
-            bool useObstacleRectangles = false;
-#if TEST_MSAGL
+            
             DisplayGeometryGraph.SetShowFunctions();
-#endif
             const string badEdgeOption = "-edge";
             const string mdsOption = "-mds";
             const string initialLayoutOption = "-initl";
@@ -73,8 +71,6 @@ namespace TestForGdi {
             bool testSave = false;
 
 
-            const string testConvexHullString = "-convexHull";
-            bool testConvexHull = false;
             bool bundling = false;
 
             double bendPenalty = SsstRectilinearPath.DefaultBendPenaltyAsAPercentageOfDistance;
@@ -94,27 +90,6 @@ namespace TestForGdi {
                         return;
                     }
 
-                    if (s == "-devTrace") {
-#if DEVTRACE
-                        ++iarg;
-                        if (iarg >= args.Length) {      // require one value
-                            throw new ApplicationException("Missing filename for -" + s);
-                        }
-
-#if MSAGL_INTERNALS_NOT_VISIBLE
-                        // Copied the one line from this method here because of access issues, signing, etc.
-                        // with InternalsVisibleTo.
-                        //DevTrace.AddListenerToFile(args[iarg]);
-#else
-                        // Use File.Create to overwrite any existing file.
-                        Trace.Listeners.Add(new TextWriterTraceListener(File.Create(args[iarg])));
-#endif
-
-#else
-                        System.Diagnostics.Debug.WriteLine("-devtrace requires the DEVTRACE build configuration");
-                        return;
-#endif
-                    }
 
                     // Start with some specific tests that we'll just pass arguments to.
                     // These are not "-" prefixed.
@@ -135,9 +110,7 @@ namespace TestForGdi {
                                     System.Diagnostics.Debug.WriteLine("argument is missing after -vdc");
                                     return;
                                 }
-#if TEST_MSAGL
                                 ShowDebugCurves(args[iarg + 1]);
-#endif
                                 return;
                             case "-geom": // must be before case "g":
                                 geomFileNames.Add(args[iarg + 1]);
@@ -151,8 +124,6 @@ namespace TestForGdi {
                                                                                           bundling
                                                                                               ? new BundlingSettings()
                                                                                               : null,
-                                                                                      UseObstacleRectangles =
-                                                                                          useObstacleRectangles,
                                                                                       BendPenalty = bendPenalty
                                                                                   };
 
@@ -173,8 +144,7 @@ namespace TestForGdi {
                             }
                             case "-gtest":
                                 LoadGeomFilesTest(args.Skip(iarg + 1), edgeRoutingMode, useSparseVisibilityGraph,
-                                                  useObstacleRectangles,
-                                                  bendPenalty, 0.52359877559829882);
+                                                                                                    bendPenalty, 0.52359877559829882);
                                 return;
                             case "-grouptest":
                                 GroupRoutingTest();
@@ -193,15 +163,12 @@ namespace TestForGdi {
                                 return;
                             case "-geomtestcone":
                                 LoadGeomFilesTest(args.Skip(iarg + 1), edgeRoutingMode, useSparseVisibilityGraph,
-                                                  useObstacleRectangles,
+                                                  
                                                   bendPenalty, Math.PI/6);
                                 return;
                             case "layerseparationwithtransform":
                                 LayerSeparationWithTransform();
                                 return;
-                            case "testwaypoints":
-                                TestWayPoints();
-                                break;
                             case "-bundling":
                                 bundling = true;
                                 edgeRoutingMode = EdgeRoutingMode.SplineBundling;
@@ -222,10 +189,6 @@ namespace TestForGdi {
                                 useSparseVisibilityGraph = true;
                                 System.Diagnostics.Debug.WriteLine("setting sparseVg");
                                 break;
-                            case "-userect":
-                                useObstacleRectangles = true;
-                                System.Diagnostics.Debug.WriteLine("setting useRect");
-                                break;
                             case "-bendpenalty":
                                 bendPenalty = double.Parse(args[iarg + 1]);
                                 System.Diagnostics.Debug.WriteLine("setting bendPenalty");
@@ -239,12 +202,6 @@ namespace TestForGdi {
                                 edgeRoutingMode = EdgeRoutingMode.RectilinearToCenter;
                                 System.Diagnostics.Debug.WriteLine("setting rectToCenter");
                                 break;
-                                //                            case "testspanner":
-                                //#if TEST_MSAGL
-                                //                                ConeSpannerTest.TestSpanner();
-                                //#else
-                                //                                System.Diagnostics.Debug.WriteLine("ConeSpannerTest is only available in TEST mode");
-                                //#endif
                             default:
                                 if (s.StartsWith(badEdgeOption)) {} else if (s.StartsWith(mdsOption)) {
                                     mds = true;
@@ -252,9 +209,8 @@ namespace TestForGdi {
                                     FormStuff.initialLayout = true;
                                 } else if (s.StartsWith("-bundling")) {
                                     bundling = true;
-                                } else if (s.StartsWith(testConvexHullString)) {
-                                    testConvexHull = true;
-                                } else if (s == "-filereps")
+                                }
+                                else if (s == "-filereps")
                                     // This is probably used with -quiet.  Must come before StartsWith("-f") option.
                                     fileReps = Int32.Parse(args[++iarg]);
                                 else if (s == "-randomshifts")
@@ -287,9 +243,6 @@ namespace TestForGdi {
                 var sw = new Stopwatch();
                 sw.Start();
 
-                if (testConvexHull)
-                    TestConvexHull();
-
                 if (testSave)
                     TestSave();
 
@@ -310,18 +263,17 @@ namespace TestForGdi {
                 foreach (string listFileName in listFileNames) {
                     ProcessFileList(listFileName, fileReps, show, mds, edgeRoutingMode, bendPenalty, bundling,
                                     randomShifts,
-                                    useSparseVisibilityGraph, useObstacleRectangles);
+                                    useSparseVisibilityGraph);
                 }
                 foreach (string fileSpec in dotFileSpecs) {
                     ProcessFileSpec(fileSpec, fileReps, show, mds, edgeRoutingMode, bendPenalty, bundling, randomShifts,
-                                    useSparseVisibilityGraph, useObstacleRectangles);
+                                    useSparseVisibilityGraph);
                 }
                 foreach (string geomFileName in geomFileNames) {
                     var edgeRoutingSettings = new EdgeRoutingSettings {
                                                                           EdgeRoutingMode = edgeRoutingMode,
                                                                           BundlingSettings =
                                                                               bundling ? new BundlingSettings() : null,
-                                                                          UseObstacleRectangles = useObstacleRectangles,
                                                                           BendPenalty = bendPenalty
                                                                       };
                     LoadGeomFile(geomFileName, edgeRoutingSettings, show);
@@ -356,14 +308,13 @@ namespace TestForGdi {
             if (edgeRoutingSettings.EdgeRoutingMode == EdgeRoutingMode.Rectilinear || edgeRoutingSettings.EdgeRoutingMode == EdgeRoutingMode.RectilinearToCenter) {
                 var sugiyamaSettings=new SugiyamaLayoutSettings();
                 RouteRectEdgesOfGeomGraph(edgeRoutingSettings.EdgeRoutingMode, true ,
-                                        edgeRoutingSettings.UseObstacleRectangles, bendPenalty, graph.GeometryGraph, sugiyamaSettings);
+                                        bendPenalty, graph.GeometryGraph, sugiyamaSettings);
             } else {
                 const double angle = 30 * Math.PI / 180;
                 var router = new SplineRouter(graph.GeometryGraph, edgeRoutingSettings.Padding, edgeRoutingSettings.PolylinePadding, angle, edgeRoutingSettings.BundlingSettings);
                 router.Run();
 
                 TestPadding(graph.GeometryGraph);
-#if TEST_MSAGL
                 var gv = new GViewer();
                 var f = new Form {
                     StartPosition = FormStartPosition.CenterScreen,
@@ -380,7 +331,7 @@ namespace TestForGdi {
                 f.ResumeLayout();
 
                 f.ShowDialog();
-#endif
+
             }
         }
 
@@ -396,9 +347,7 @@ namespace TestForGdi {
 
             var splineRouter = new SplineRouter(graph, 1, 20, Math.PI / 6, null);
             splineRouter.Run();
-#if TEST_MSAGL
             LayoutAlgorithmSettings.ShowGraph(graph);
-#endif
         }
 
         static void BundleWithWidths() {
@@ -456,56 +405,22 @@ namespace TestForGdi {
             layeredLayout.Run();
             //   LayoutHelpers.CalculateLayout(graph, settings);
             GeometryGraphWriter.Write(graph, "c:\\tmp\\correctLayout");
-#if TEST_MSAGL
             LayoutAlgorithmSettings.ShowGraph(graph);
-#endif
         }
-
-#if TEST_MSAGL
 
         static void ShowDebugCurves(string fileName) {
-            DisplayGeometryGraph.ShowDebugCurvesEnumerationOnForm(GetDebugCurves(fileName), new Form1());
+            DisplayGeometryGraph.ShowDebugCurvesEnumerationOnForm(DebugCurveCollection.ReadFromFile(fileName), new Form1());
         }
 
-        static IEnumerable<DebugCurve> GetDebugCurves(string fileName) {
-            IFormatter formatter = new BinaryFormatter();
-            Stream file = null;
-
-            try {
-                file = File.Open(fileName, FileMode.Open);
-                var debugCurveCollection = formatter.Deserialize(file) as DebugCurveCollection;
-                if (null == debugCurveCollection) {
-                    System.Diagnostics.Debug.WriteLine("cannot read debugcurves from " + fileName);
-                    return null;
-                }
-                return debugCurveCollection.DebugCurvesArray;
-            }
-            catch (FileNotFoundException ex) {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
-            }
-            catch (Exception) {
-                throw;
-            }
-            finally {
-                if (null != file) {
-                    file.Close();
-                }
-            }
-            return null;
-        }
-#endif
+        
 
         static void GroupRoutingTestSpline() {
             LayoutAlgorithmSettings settings;
             var graph = GetTestGraphWithClusters(out settings);
-#if TEST_MSAGL
             //DisplayGeometryGraph.ShowGraph(graph);
-#endif
             var router = new SplineRouter(graph, 2, 9, Math.PI / 6, new BundlingSettings());
             router.Run();
-#if TEST_MSAGL
             DisplayGeometryGraph.ShowGraph(graph);
-#endif
         }
 
 //        static void FixClusterBoundaries(Cluster cluster, double i) {
@@ -554,9 +469,7 @@ namespace TestForGdi {
             GeometryGraph graph = GeometryGraphReader.CreateFromFile("c:/tmp/bug.msagl.geom");
             var router = new SplineRouter(graph, 10, 5, Math.PI/6);
             router.Run();
-#if TEST_MSAGL
             DisplayGeometryGraph.ShowGraph(graph);
-#endif
         }
 
 
@@ -617,9 +530,7 @@ namespace TestForGdi {
 
             var layeredLayout = new LayeredLayout(graph, settings);
             layeredLayout.Run();
-#if TEST_MSAGL
             LayoutAlgorithmSettings.ShowGraph(graph);
-#endif
 
             Debug.Assert(Math.Abs(closed.Center.X - ellipse.Center.X) < 0.01);
             Debug.Assert(Math.Abs(open.Center.X - bezier.Center.X) < 0.01);
@@ -676,53 +587,13 @@ namespace TestForGdi {
             sw.Stop();
             System.Diagnostics.Debug.WriteLine((double) sw.ElapsedMilliseconds/1000);
             return;
-#if false // turns off "unreachable code" warning due to the foregoing "return;".
-
-            RouteBus1138(count);
-
-            GeometryGraph graph = GeometryGraphReader.CreateFromFile("c:\\tmp\\graph0.msagl.geom");
-            for (int i = 0; i < count; i++)
-            {
-                var box = graph.BoundingBox;
-                box.Pad(box.Diagonal/4);
-                graph.BoundingBox = box;
-                var router = new SplineRouter(graph, 10, 1, Math.PI/6);
-                router.Run();
-            }
-#if TEST_MSAGL
-            LayoutAlgorithmSettings.ShowGraph(graph);
-#endif
-            graph = GeometryGraphReader.CreateFromFile("c:\\tmp\\graph1.msagl.geom");
-            var splineRouter = new SplineRouter(graph, 10, 1, Math.PI / 6);
-            splineRouter.Run();
-#if TEST_MSAGL
-            LayoutAlgorithmSettings.ShowGraph(graph);
-#endif
-            //RoutingTest0();
-            for (int i = 0; i < count; i++)
-            {
-                graph = GeometryGraphReader.CreateFromFile("c:\\tmp\\graph2.msagl.geom");
-                var router = new SplineRouter(graph, 10, 1, Math.PI / 6);
-                router.Run();
-                var box = graph.BoundingBox;
-                box.Pad(box.Diagonal/4);
-                graph.BoundingBox = box;
-            }
-#if TEST_MSAGL
-            LayoutAlgorithmSettings.ShowGraph(graph);
-#endif
-#endif
         }
         static void RouteCustomEdges(int count) {
             for (int i = 0; i < count; i++) {
                 var graph = CreateGraphForGroupRouting();
-#if TEST_MSAGL
                 LayoutAlgorithmSettings.ShowGraph(graph);
-#endif
                 var router = new SplineRouter(graph, 3, 3,Math.PI/180*30);
                 router.Run();
-#if TEST_MSAGL
-
                 int j = 0;
                 List<DebugCurve> edges =
                     graph.Edges.Select(edge => new DebugCurve(200, 2, DebugCurve.Colors[j++], edge.Curve))
@@ -730,7 +601,7 @@ namespace TestForGdi {
                 LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(graph.RootCluster.AllClustersDepthFirst().Select(
                     s => new DebugCurve(s.BoundaryCurve, s.UserData)).
                                                                        Concat(edges));
-#endif
+
             }
         }
 
@@ -740,15 +611,12 @@ namespace TestForGdi {
             var sugiyamaSettings = (SugiyamaLayoutSettings) settings;
             var router = new RectilinearEdgeRouter(graph, sugiyamaSettings.NodeSeparation/6,
                                                    sugiyamaSettings.NodeSeparation/6,
-                                                   true,
-                                                   sugiyamaSettings.EdgeRoutingSettings.UseObstacleRectangles)
+                                                   true, 0)
                                                    {
                                                        BendPenaltyAsAPercentageOfDistance = sugiyamaSettings.EdgeRoutingSettings.BendPenalty
                                                    };
             router.Run();
-#if TEST_MSAGL
             DisplayGeometryGraph.ShowGraph(graph);
-#endif
         }
 
         static GeometryGraph GetTestGraphWithClusters(out LayoutAlgorithmSettings settings) {            
@@ -797,23 +665,6 @@ namespace TestForGdi {
 
         static GeometryGraph CreateGraphForGroupRouting() {
             return GeometryGraphReader.CreateFromFile("c:\\tmp\\bug.msagl.geom");
-#if UNREACHABLE_CODE
-            var graph=new GeometryGraph();
-
-            var h = GenerateClusterH();
-            var f = GenerateShapeF();
-            var k = GenerateShapeK();
-            var root = graph.RootCluster;;
-            root.AddChild(h);
-            root.AddChild(f);
-            root.AddChild(k);
-            var edges =
-                    CreateEdgesForGroupRouting(graph.RootCluster.AllClustersDepthFirst());
-            foreach (var edge in edges) {
-                graph.Edges.Add(edge);
-            }
-            return graph;
-#endif // UNREACHABLE_CODE
         }
 
      
@@ -832,22 +683,14 @@ namespace TestForGdi {
         /// <param name="bendPenalty"></param>
         /// <param name="coneAngle"></param>
         static void LoadGeomFilesTest(IEnumerable<string> fileList, EdgeRoutingMode edgeRoutingMode, bool useSparseVisibilityGraph,
-                                    bool useObstacleRectangles, double bendPenalty, double coneAngle) {
+                                    double bendPenalty, double coneAngle) {
             foreach (string s in fileList)
-                LoadGeomFileTest(s, edgeRoutingMode, useSparseVisibilityGraph, useObstacleRectangles, bendPenalty, coneAngle);
+                LoadGeomFileTest(s, edgeRoutingMode, useSparseVisibilityGraph,  bendPenalty, coneAngle);
         }
 
         static void LoadGeomFile(string s, EdgeRoutingSettings edgeRoutingSettings, bool show) {
             LayoutAlgorithmSettings settings;
             GeometryGraph geomGraph = GeometryGraphReader.CreateFromFile(s, out settings);
-            if (geomGraph == null) {
-                //Opens file "data.xml" and deserializes the object from it.
-                var stream = File.Open(s, FileMode.Open);
-                var formatter = new BinaryFormatter();
-                geomGraph = (GeometryGraph) formatter.Deserialize(stream);
-                geomGraph.RootCluster = new Cluster();
-                stream.Close();
-            }
             geomGraph.UpdateBoundingBox();
             if (FormStuff.initialLayout) {
                 var l = new List<Cluster>();
@@ -868,8 +711,7 @@ namespace TestForGdi {
                 var sugiyamaSettings = (SugiyamaLayoutSettings) settings;
                 if (edgeRoutingSettings.EdgeRoutingMode == EdgeRoutingMode.Rectilinear ||
                     edgeRoutingSettings.EdgeRoutingMode == EdgeRoutingMode.RectilinearToCenter) {
-                    RouteRectEdgesOfGeomGraph(edgeRoutingSettings.EdgeRoutingMode, true, 
-                                            edgeRoutingSettings.UseObstacleRectangles, edgeRoutingSettings.BendPenalty, geomGraph, sugiyamaSettings);
+                    RouteRectEdgesOfGeomGraph(edgeRoutingSettings.EdgeRoutingMode, true, edgeRoutingSettings.BendPenalty, geomGraph, sugiyamaSettings);
                 } else {
                     const double angle = 30*Math.PI/180;
                     var router = new SplineRouter(geomGraph, 1, 20, angle, edgeRoutingSettings.BundlingSettings);
@@ -879,7 +721,6 @@ namespace TestForGdi {
                 }
             }
 
-#if TEST_MSAGL
             if (show) {
                 geomGraph.UpdateBoundingBox();
                 var b = geomGraph.BoundingBox;
@@ -887,7 +728,7 @@ namespace TestForGdi {
                 geomGraph.BoundingBox = b;
                 DisplayGeometryGraph.ShowGraph(geomGraph);
             }
-#endif
+
         }
 
         static void TestPadding(GeometryGraph geomGraph) {
@@ -907,15 +748,14 @@ namespace TestForGdi {
 
                     var p = nb.ClosestParameter(curvePoint);
                     var nodePoint = nb[p];
-#if TEST_MSAGL
                     if ((nodePoint - curvePoint).Length < 0.99)
                         LayoutAlgorithmSettings.Show(new LineSegment(nodePoint, curvePoint), nb, edgeCurve);
-#endif
+
                 }
             }
         }
 
-        static void RouteRectEdgesOfGeomGraph(EdgeRoutingMode edgeRoutingMode, bool useSparseVisibilityGraph, bool useObstacleRectangles,
+        static void RouteRectEdgesOfGeomGraph(EdgeRoutingMode edgeRoutingMode, bool useSparseVisibilityGraph, 
                                             double bendPenalty, GeometryGraph geomGraph, SugiyamaLayoutSettings settings) {
             var nodeShapeMap = new Dictionary<Node, Shape>();
             foreach (Node node in geomGraph.Nodes) {
@@ -924,7 +764,7 @@ namespace TestForGdi {
             }
 
             var padding = (settings == null) ? 3 : settings.NodeSeparation / 3;
-            var router = new RectilinearEdgeRouter(nodeShapeMap.Values, padding, 3, useSparseVisibilityGraph, useObstacleRectangles)
+            var router = new RectilinearEdgeRouter(nodeShapeMap.Values, padding, 3, useSparseVisibilityGraph, 0)
             {
                 RouteToCenterOfObstacles = edgeRoutingMode == EdgeRoutingMode.RectilinearToCenter,
                 BendPenaltyAsAPercentageOfDistance = bendPenalty
@@ -952,24 +792,22 @@ namespace TestForGdi {
         }
 
         static void LoadGeomFileTest(string s, EdgeRoutingMode edgeRoutingMode, bool useSparseVisibilityGraph,
-                                    bool useObstacleRectangles, double bendPenalty, double coneAngle) {
+                                     double bendPenalty, double coneAngle) {
             var random = new Random(1);
             var delta = new Point(2, 2);
             GeometryGraph geomGraph = GeometryGraphReader.CreateFromFile(s);
             const int reps = 1000;
 
             if (edgeRoutingMode == EdgeRoutingMode.Rectilinear || edgeRoutingMode == EdgeRoutingMode.RectilinearToCenter)
-                RectilinearTestOnGeomGraph(edgeRoutingMode, useSparseVisibilityGraph, useObstacleRectangles, bendPenalty, reps, random, geomGraph, delta);
+                RectilinearTestOnGeomGraph(edgeRoutingMode, useSparseVisibilityGraph, bendPenalty, reps, random, geomGraph, delta);
             else {
                 var router = new SplineRouter(geomGraph, 9, 0.95238095238095233, Math.PI/6, null);
                 router.Run();
-#if TEST_MSAGL
                 LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(DebugCurvesFromGraph(geomGraph));
-#endif
             }
         }
 
-        static void RectilinearTestOnGeomGraph(EdgeRoutingMode edgeRoutingMode, bool useSparseVisibilityGraph, bool useObstacleRectangles,
+        static void RectilinearTestOnGeomGraph(EdgeRoutingMode edgeRoutingMode, bool useSparseVisibilityGraph, 
                                                double bendPenalty, int reps, Random random, GeometryGraph geomGraph, Point delta) {
             System.Diagnostics.Debug.WriteLine("shifting nodes and calling RectilinearEdgeRouter {0} times", reps);
             for (int i = 0; i < reps; i++) {
@@ -979,9 +817,7 @@ namespace TestForGdi {
                 //                        continue;
                 if (i == -1) {
                     GeometryGraphWriter.Write(geomGraph, "c:/tmp/ch0");
-#if TEST_MSAGL
                     LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(DebugCurvesFromGraph(geomGraph));
-#endif
                 }
                 var nodeShapeMap = new Dictionary<Node, Shape>();
                 foreach (Node node in geomGraph.Nodes) {
@@ -990,7 +826,7 @@ namespace TestForGdi {
                 }
 
                 var router = new RectilinearEdgeRouter(nodeShapeMap.Values, RectilinearEdgeRouter.DefaultPadding,
-                                                       RectilinearEdgeRouter.DefaultCornerFitRadius, useSparseVisibilityGraph, useObstacleRectangles) {
+                                                       RectilinearEdgeRouter.DefaultCornerFitRadius, useSparseVisibilityGraph, 0) {
                     RouteToCenterOfObstacles = edgeRoutingMode == EdgeRoutingMode.RectilinearToCenter,
                     BendPenaltyAsAPercentageOfDistance =  bendPenalty
                 };
@@ -1016,14 +852,13 @@ namespace TestForGdi {
             }
         }
 
-#if TEST_MSAGL
         static IEnumerable<DebugCurve> DebugCurvesFromGraph(GeometryGraph graph) {
             IEnumerable<DebugCurve> dd = graph.Nodes.Where(n => n.BoundaryCurve != null).
                 Select(n => new DebugCurve(1, "black", n.BoundaryCurve));
             return
                 dd.Concat(graph.Edges.Where(edge => edge.Curve != null).Select(e => new DebugCurve(1, "blue", e.Curve)));
         }
-#endif
+
 
         static void ConvertDotToGeom(string dotFileName, string geomFileName) {
             int line, column;
@@ -1035,63 +870,7 @@ namespace TestForGdi {
             GeometryGraphWriter.Write(geomGraph, geomFileName);
         }
 
-        static void TestWayPoints() {
-//#if TEST_MSAGL
-//            var graph = Parser.GraphFromFile("c:/dev/graphlayout/graphs/fsm.dot");
-//            var gv = new GViewer();
-//#if TEST_MSAGL
-//            gv.MouseMove += DisplayGeometryGraph.GviewerMouseMove;
-//#endif
-//            gv.CalculateLayout(graph);
-//            var geomGraph = graph.GeometryGraph;
-//            var router =
-//                new RectilinearEdgeRouter(
-//                    geomGraph.Nodes.Select(
-//                        n => new Shape(n.Id, n.BoundaryCurve)));
-//
-//
-//            foreach (var shape in router.Obstacles) {
-//                var n = geomGraph.FindNode(shape.Id);
-//                shape.Ports.Insert(new FloatingPort(n.BoundaryCurve, n.Center));
-//            }
-//
-//            foreach (var e in graph.Edges) {
-//                e.Label = null;
-//                var geomEdge = e.GeometryEdge;
-//                if (geomEdge.SourcePort == null)
-//                    geomEdge.SourcePort = router.FindObstacle(geomEdge.Source.Id).Ports.First();
-//                if (geomEdge.TargetPort == null)
-//                    geomEdge.TargetPort = router.FindObstacle(geomEdge.Target.Id).Ports.First();
-//                if ((string)geomEdge.Source.Id == "LR_6" && (string)geomEdge.Target.Id == "LR_5")
-//                    geomEdge.EdgeGeometry.Waypoints = new[] { new Point(640, -183), new Point(670, -183) };
-//                router.AddEdgeGeometryToRoute(e.GeometryEdge.EdgeGeometry);
-//            }
-//            router.RouteToCenterOfObstacles = true;
-//            router.RouteEdges();
-//
-//
-//            var f = new Form();
-//            f.SuspendLayout();
-//            f.Controls.Add(gv);
-//            gv.Dock = DockStyle.Fill;
-//            gv.NeedToCalculateLayout = false;
-//            var statusStrip = new StatusStrip();
-//            var toolStribLbl = new ToolStripStatusLabel("test");
-//            statusStrip.Items.Add(toolStribLbl);
-//            f.Controls.Add(statusStrip);
-//            f.ResumeLayout();
-//
-//            gv.Graph = graph;
-//            f.ResumeLayout();
-//
-//            f.ShowDialog();
-//
-//            Environment.Exit(0);
-//#else
-//            System.Diagnostics.Debug.WriteLine("Test_WayPoints is only available in TEST mode");
-//#endif
-        }
-
+        
         static string GetFileSpec(string[] args, ref int iarg) {
             string s = args[iarg];
             string fileName = s.Substring(2);
@@ -1134,32 +913,7 @@ namespace TestForGdi {
                     router.Run();
                 }
             t.Stop();
-            System.Diagnostics.Debug.WriteLine(t.Duration);
-            //#if TEST_MSAGL
-
-            //            LayoutAlgorithmSettings.Show(a, b, c, eg.Curve, eg0.Curve, eg1.Curve);
-            //#endif
-        }
-
-        static void TestConvexHull() {
-            //            Curve curve = (Curve)CurveFactory.CreateTestShape(10, 9);
-            //            IEnumerable<Microsoft.Msagl.Point> hull = ConvexHull.CalculateConvexHull(CurveEnds(curve));
-            //            IEnumerator<Microsoft.Msagl.Point> en = hull.GetEnumerator();
-            //            en.MoveNext();
-            //            Microsoft.Msagl.Point a = en.Current;
-            //            en.MoveNext();
-            //            Microsoft.Msagl.Point b = en.Current;
-            //
-            //            Curve hullCurve = new Curve();
-            //            hullCurve.AddSegment(new LineSegment(a, b));
-            //            while (en.MoveNext()) {
-            //                hullCurve.AddSegment(new LineSegment(hullCurve.End, en.Current));
-            //            }
-            //
-            //            hullCurve.AddSegment(new LineSegment(hullCurve.End, hullCurve.Start));
-            //#if TEST_MSAGL
-            //            LayoutAlgorithmSettings.Show(hullCurve);
-            //#endif
+            System.Diagnostics.Debug.WriteLine(t.Duration);            
         }
 
         static void TestSave() {
@@ -1235,7 +989,7 @@ namespace TestForGdi {
         }
 
         static void ProcessFileList(string listFile, int fileReps, bool show, bool mds, EdgeRoutingMode edgeRoutingMode, double bendPenalty,
-                                    bool bundling, int randomShifts, bool useSparseVisibilityGraph, bool useObstacleRectangles) {
+                                    bool bundling, int randomShifts, bool useSparseVisibilityGraph) {
             StreamReader sr;
             try {
                 sr = new StreamReader(listFile);
@@ -1250,13 +1004,13 @@ namespace TestForGdi {
                 if (String.IsNullOrEmpty(fileName)) continue;
                 fileName = Path.Combine(Path.GetDirectoryName(listFile), fileName.ToLower());
                 ProcessFile(fileName, fileReps, show, mds, edgeRoutingMode, bendPenalty, ref nOfBugs, bundling, randomShifts,
-                            useSparseVisibilityGraph, useObstacleRectangles);
+                            useSparseVisibilityGraph);
             }
             sr.Close();
         }
 
         static void ProcessFileSpec(string fileSpec, int fileReps, bool show, bool mds, EdgeRoutingMode edgeRoutingMode, double bendPenalty,
-                                    bool bundling, int randomShifts, bool useSparseVisibilityGraph, bool useObstacleRectangles) {
+                                    bool bundling, int randomShifts, bool useSparseVisibilityGraph) {
             // strPathFileSpec may be with or without directory or wildcards, e.g.:
             //   x.txt, Test\Data\x.txt, Test\Data\Rand*.txt
             string fileName = Path.GetFileName(fileSpec);
@@ -1271,11 +1025,11 @@ namespace TestForGdi {
             }
             foreach (FileSystemInfo fileInfo in fileInfos)
                 ProcessFile(fileInfo.FullName, fileReps, show, mds, edgeRoutingMode, bendPenalty, ref nOfBugs, bundling, randomShifts,
-                        useSparseVisibilityGraph, useObstacleRectangles);
+                        useSparseVisibilityGraph);
         }
 
         static void ProcessFile(string fileName, int fileReps, bool show, bool mds, EdgeRoutingMode edgeRoutingMode, double bendPenalty,
-                                ref int nOfBugs, bool bundling, int randomShifts, bool useSparseVisibilityGraph, bool useObstacleRectangles) {
+                                ref int nOfBugs, bool bundling, int randomShifts, bool useSparseVisibilityGraph) {
             System.Diagnostics.Debug.WriteLine(fileName);
             var random = new Random(1);
             for (int rep = 0; rep < fileReps; ++rep) {
@@ -1285,8 +1039,7 @@ namespace TestForGdi {
                     Graph gwgraph = Form2.CreateDrawingGraphFromFile(fileName, out line, out column, out msaglFile);
                     if (msaglFile) {
                         using (var f = new Form2(false) {
-                                    EdgeRoutingMode = edgeRoutingMode,
-                                    UseObstacleRectangles = useObstacleRectangles}) {
+                                    EdgeRoutingMode = edgeRoutingMode}) {
                             f.GViewer.NeedToCalculateLayout=false;
                             if (edgeRoutingMode == EdgeRoutingMode.SplineBundling) {
                                 var nodeSeparation = gwgraph.LayoutAlgorithmSettings.NodeSeparation;
@@ -1315,11 +1068,9 @@ namespace TestForGdi {
                     else 
                     if (gwgraph != null) {
                         gwgraph.LayoutAlgorithmSettings.EdgeRoutingSettings.EdgeRoutingMode = edgeRoutingMode;
-                        gwgraph.LayoutAlgorithmSettings.EdgeRoutingSettings.UseObstacleRectangles = useObstacleRectangles;
                         gwgraph.LayoutAlgorithmSettings.EdgeRoutingSettings.BendPenalty = bendPenalty;
                         using (var f = new Form2(false) {
                                     EdgeRoutingMode = edgeRoutingMode,
-                                    UseObstacleRectangles = useObstacleRectangles,
                                     BendPenalty = bendPenalty
                                 }) {
                             if (mds) {
@@ -1343,7 +1094,7 @@ namespace TestForGdi {
                                     ShiftNodes(random, geomGraph, del);
                                     if (edgeRoutingMode == EdgeRoutingMode.Rectilinear ||
                                         edgeRoutingMode == EdgeRoutingMode.RectilinearToCenter)
-                                        RouteRectEdgesOfGeomGraph(edgeRoutingMode, useSparseVisibilityGraph, useObstacleRectangles, bendPenalty,
+                                        RouteRectEdgesOfGeomGraph(edgeRoutingMode, useSparseVisibilityGraph, bendPenalty,
                                                                   geomGraph, (SugiyamaLayoutSettings)gwgraph.LayoutAlgorithmSettings);
                                 }
                             }

@@ -14,10 +14,9 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
     /// </summary>
     public class HubDebugger {
         
-#if TEST_MSAGL
         readonly MetroGraphData mgd;
         readonly BundlingSettings bundlingSettings;
-        static internal void ShowHubs(MetroGraphData mgd, BundlingSettings bundlingSettings, params ICurve[] iCurves
+        static internal void ShowHubsWithAdditionalICurves(MetroGraphData mgd, BundlingSettings bundlingSettings, params ICurve[] iCurves
             ) {
             HubDebugger hd = new HubDebugger(mgd, bundlingSettings);
             if (iCurves != null) {
@@ -26,15 +25,15 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             }
         }
 
-        static internal void ShowHubs(MetroGraphData mgd, BundlingSettings bundlingSettings, bool withIdeal) {
+        static internal void ShowHubsTurnByTurn(MetroGraphData mgd, BundlingSettings bundlingSettings, bool withIdeal) {
             if (!withIdeal) return;
 
             foreach (var v in mgd.Stations) {
-                ShowHubs(mgd, bundlingSettings, v);
+                ShowHubsWithHighligtedStation(mgd, bundlingSettings, v);
             }
         }
 
-        static internal void ShowHubs(MetroGraphData mgd, BundlingSettings bundlingSettings, Station highlightedNode) {
+        static internal void ShowHubsWithHighligtedStation(MetroGraphData mgd, BundlingSettings bundlingSettings, Station highlightedNode) {
             HubDebugger hd = new HubDebugger(mgd, bundlingSettings);
             List<DebugCurve> debugCurves = hd.CreateDebugCurves();
             debugCurves.Add(new DebugCurve(100,1, "magenta", CurveFactory.CreateCircle(3, highlightedNode.Position)));
@@ -59,10 +58,9 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             //curves.AddRange(IdealHubsWithNeighbors());
             //curves.AddRange(IdealBundles());
             if (iCurves != null) {
-                int i = 0;
-                foreach(var iCurve in iCurves)
-                if (iCurve != null)
-                    curves.Add(new DebugCurve(100,0.2, DebugCurve.Colors[i++], iCurve));
+                foreach (var iCurve in iCurves)
+                    if (iCurve != null)
+                        curves.Add(new DebugCurve(100, 0.2, "Brown", iCurve));
             }
             return curves;
         }
@@ -120,7 +118,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
             return dc;
         }
-#endif
+
 
         /*void SaveAsBitmap(string filename, GViewer gViewer) {
             int w = (int)Math.Ceiling((double) gViewer.Graph.Width);

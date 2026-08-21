@@ -61,18 +61,17 @@ namespace Microsoft.Msagl.Core.Routing {
         /// For rectilinear, the penalty for a bend, as a percentage of the Manhattan distance between the source and target ports.
         /// </summary>
         public double BendPenalty { get; set; }
-
+        /// <summary>
+        /// minimal distance between two edges in rectilinear case
+        /// </summary>
+        public double EdgeSeparationRectilinear = 0;
         ///<summary>
         ///the settings for general edge bundling
         ///</summary>
         public BundlingSettings BundlingSettings { get; set; }
 
         
-        /// <summary>
-        /// For rectilinear, whether to use obstacle bounding boxes in the visibility graph.
-        /// </summary>
-        public bool UseObstacleRectangles { get; set; }
-
+        
         double routingToParentConeAngle = Math.PI/6;
 
         /// <summary>

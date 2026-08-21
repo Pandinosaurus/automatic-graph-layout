@@ -7,9 +7,7 @@ namespace Microsoft.Msagl.Core.Layout {
     /// <summary>
     /// Edge of the graph
     /// </summary>
-#if TEST_MSAGL
     [Serializable]
-#endif
     public class Edge : GeometryObject, ILabeledObject {
         /// <summary>
         /// Defines the way the edge connects to the source.
@@ -246,7 +244,7 @@ namespace Microsoft.Msagl.Core.Layout {
                 return;
             Curve = Curve.Transform(matrix);
             if (UnderlyingPolyline != null)
-                for (Site s = UnderlyingPolyline.HeadSite, s0 = UnderlyingPolyline.HeadSite;
+                for (CornerSite s = UnderlyingPolyline.HeadSite, s0 = UnderlyingPolyline.HeadSite;
                      s != null;
                      s = s.Next, s0 = s0.Next)
                     s.Point = matrix * s.Point;

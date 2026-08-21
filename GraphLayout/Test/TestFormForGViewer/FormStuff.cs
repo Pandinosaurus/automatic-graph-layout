@@ -26,10 +26,11 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
+using DgmlParser;
 using Dot2Graph;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
@@ -38,10 +39,10 @@ namespace TestFormForGViewer {
     public class FormStuff {
         public static bool initialLayout;
         static string lastFileName;
-        public static GViewer GViewer;
+        protected static GViewer GViewer;
 
         public static Form CreateOrAttachForm(GViewer gviewer, Form form) {
-            GViewer=gviewer;
+            GViewer = gviewer;
             if (form == null)
                 form = new Form();
             form.SuspendLayout();
@@ -58,13 +59,13 @@ namespace TestFormForGViewer {
             return form;
         }
 
-        static void form_Load(object sender,EventArgs e) {
-            ((Form) sender).Focus();
+        static void form_Load(object sender, EventArgs e) {
+            ((Form)sender).Focus();
         }
 
 
         static MenuStrip GetMainMenuStrip() {
-            var menu=new MenuStrip();
+            var menu = new MenuStrip();
             menu.Items.Add(FileStripItem());
 
             return menu;
@@ -73,7 +74,7 @@ namespace TestFormForGViewer {
 
         static ToolStripItem FileStripItem() {
             var item = new ToolStripMenuItem("File");
-            item.DropDownItems.Add((ToolStripItem) OpenDotFileItem());
+            item.DropDownItems.Add((ToolStripItem)OpenDotFileItem());
             item.DropDownItems.Add(ReloadDotFileItem());
             return item;
         }
@@ -86,8 +87,8 @@ namespace TestFormForGViewer {
         }
 
         static void ReloadFileClick(object sender, EventArgs e) {
-          if(lastFileName!=null)
-              ReadGraphFromFile(lastFileName, GViewer, false);
+            if (lastFileName != null)
+                ReadGraphFromFile(lastFileName, GViewer, false);
         }
 
         static ToolStripItem OpenDotFileItem() {
@@ -98,11 +99,11 @@ namespace TestFormForGViewer {
         }
 
         static void OpenFileClick(object sender, EventArgs e) {
-            
+
             var openFileDialog = new OpenFileDialog {
-                                                        RestoreDirectory = true,
-                                                        Filter = " dot files (*.dot)|*.dot|All files (*.*)|*.*"
-                                                    };
+                RestoreDirectory = true,
+                Filter = "MSAGL Files(*.msagl)|*.msagl|DOT (*.dot,*.gv)|*.dot;*.gv|DGML Files(*.dgml)|*.dgml|All(*.*)|*.*"
+            };
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
                 ReadGraphFromFile(openFileDialog.FileName, GViewer, false);
@@ -110,23 +111,45 @@ namespace TestFormForGViewer {
 
         internal static Graph CreateDrawingGraphFromFile(string fileName, out int line, out int column, out bool msaglFile) {
             string msg;
-            var graph = Parser.Parse(fileName, out line, out column, out msg);
-            if (graph != null) {
-                msaglFile = false;
-                return graph;
-            }
-
-            try {
-                graph = Graph.Read(fileName);
-                msaglFile = true;
-                return graph;
-            } catch (Exception) {
-                System.Diagnostics.Debug.WriteLine("cannot read " + fileName);
-            }
+            Graph graph = null;
             msaglFile = false;
-            return null;
-        }
+            line = column = 0;
 
+            // Get extension
+            string ext = Path.GetExtension(fileName);
+            switch (ext.ToLower()) {
+                case ".dgml":
+                    try {
+                        graph = DgmlParser.DgmlParser.Parse(fileName);
+                        line = column = 0;
+                        return graph;
+                    }
+                    catch (Exception) {
+                        System.Diagnostics.Debug.WriteLine("cannot read " + fileName);
+                    }
+                    break;
+                case ".dot":
+                case ".gv":
+                    graph = Parser.Parse(fileName, out line, out column, out msg);
+                    if (graph != null) {
+                        return graph;
+                    }
+                    break;
+                case ".msagl":
+                default:
+                    try {
+                        graph = Graph.Read(fileName);
+                        msaglFile = true;
+                        return graph;
+                    }
+                    catch (Exception) {
+                        System.Diagnostics.Debug.WriteLine("cannot read " + fileName);
+                    }
+                    break;
+            }
+
+            return graph;
+        }
 
         public static void ReadGraphFromFile(string fileName, GViewer gViewer, bool verbose) {
             int eLine, eColumn;
@@ -137,10 +160,6 @@ namespace TestFormForGViewer {
                 MessageBox.Show(String.Format("{0}({1},{2}): cannot process the file", fileName, eLine, eColumn));
 
             else {
-                
-#if TEST_MSAGL
-                graph.LayoutAlgorithmSettings.Reporting = Test.verbose;
-#endif
                 gViewer.FileName = fileName;
                 Stopwatch sw = null;
                 if (verbose) {

@@ -96,7 +96,6 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                 dg.DrawGraph(graphics);
         }
 
-#if TEST_MSAGL
         internal static void DrawDebugStuff(Graphics g, DGraph graphToDraw, Pen myPen) {
             if (graphToDraw.DrawingGraph.DebugICurves != null) {
                 foreach (ICurve c in graphToDraw.DrawingGraph.DebugICurves) {
@@ -463,60 +462,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                 myPen.Color = Color.Blue;
         }
 
-
-        [SuppressMessage("Microsoft.Globalization", "CA1305:SpecifyIFormatProvider", MessageId = "System.Int32.ToString"
-            )]
-        internal static void DrawDataBase(Graphics g, Pen myPen, DrawingGraph dg) {
-            int i = 0;
-
-            foreach (Anchor p in dg.DataBase.Anchors)
-                i = DrawAnchor(g, i, p);
-
-
-            myPen.Color = Color.Blue;
-            Pen myOtherPen = new Pen(Color.FromArgb(100, 0, 0, 255), 1);
-            foreach (var edges in dg.DataBase.Multiedges.Values)
-                foreach (PolyIntEdge e in edges) {
-                    //                    if (e.LayerEdges != null)
-                    //                        foreach (LayerEdge le in e.LayerEdges) {
-                    //                            g.DrawLine(myPen, PointF(dg.DataBase.Anchors[le.Source].Origin),
-                    //                                       PointF(dg.DataBase.Anchors[le.Target].Origin));
-                    //                        }
-                    if (e.Edge.UnderlyingPolyline == null) continue;
-                    var points = e.Edge.UnderlyingPolyline.ToArray();
-                    for (int j = 0; j < points.Length - 1; j++)
-                        g.DrawLine(myOtherPen, PointF(points[j]), PointF(points[j + 1]));
-                }
-
-            myPen.Color = Color.Red;
-            if (dg.DataBase.nodesToShow == null)
-                foreach (var li in dg.DataBase.Multiedges.Values)
-                    foreach (PolyIntEdge ie in li)
-                        if (ie.Edge.Curve is Curve) {
-                            foreach (ICurve s in (ie.Edge.Curve as Curve).Segments) {
-                                var bs = s as CubicBezierSegment;
-                                if (bs != null) {
-                                    g.DrawBezier(myPen, (float)bs.B(0).X, (float)bs.B(0).Y,
-                                                 (float)bs.B(1).X, (float)bs.B(1).Y,
-                                                 (float)bs.B(2).X, (float)bs.B(2).Y,
-                                                 (float)bs.B(3).X, (float)bs.B(3).Y);
-                                }
-                                else {
-                                    var ls = s as LineSegment;
-                                    g.DrawLine(myPen, (float)ls.Start.X, (float)ls.Start.Y,
-                                               (float)ls.End.X, (float)ls.End.Y);
-                                }
-                            }
-
-                            myPen.Color = Color.FromArgb(50, 100, 100, 0);
-                            if (ie.Edge.UnderlyingPolyline != null)
-                                foreach (LineSegment ls in ie.Edge.UnderlyingPolyline.GetSegments())
-                                    g.DrawLine(myPen, (float)ls.Start.X, (float)ls.Start.Y,
-                                               (float)ls.End.X, (float)ls.End.Y);
-                            myPen.Color = Color.Red;
-                        }
-        }
-
+    
 
         static int DrawAnchor(Graphics g, int i, Anchor p) {
             string stringToShow = i + (p.UserData != null ? (" " + p.UserData) : String.Empty);
@@ -539,7 +485,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                 g.DrawLine(pen, PointF(bs.B(2)), PointF(bs.B(3)));
             }
         }
-#endif
+
 
 
         internal static void AddStyleForPen(DObject dObj, Pen myPen, Style style) {
@@ -570,7 +516,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
         }
 
         static void ArrawAtTheBeginning(Graphics g, DrawingEdge edge, Color edgeColor, Pen myPen) {
-            if (edge.GeometryEdge != null && edge.Attr.ArrowAtSource)
+            if (edge.GeometryEdge != null && edge.Attr.ArrowAtSource && edge.GeometryEdge.EdgeGeometry.SourceArrowhead != null) 
                 DrawArrowAtTheBeginningWithControlPoints(g, edge, edgeColor, myPen);
         }
 
@@ -587,7 +533,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
         }
 
         static void ArrowAtTheEnd(Graphics g, DrawingEdge edge, Color edgeColor, Pen myPen) {
-            if (edge.GeometryEdge != null && edge.Attr.ArrowAtTarget)
+            if (edge.GeometryEdge != null && edge.Attr.ArrowAtTarget && edge.GeometryEdge.EdgeGeometry.TargetArrowhead != null) 
                 DrawArrowAtTheEndWithControlPoints(g, edge, edgeColor, myPen);
         }
 
@@ -707,11 +653,9 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                                 (float)sweepAngle);
         }
 
-#if TEST_MSAGL || DEVTRACE
         static PointF PP(P2 point) {
             return new PointF((float)point.X, (float)point.Y);
         }
-#endif
 
         static bool NeedToFill(Color fillColor) {
             return fillColor.A != 0; //the color is not transparent
@@ -749,7 +693,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
         internal static void DrawArrow(Graphics g, Brush brush, P2 start, P2 end, double lineWidth,
                                        ArrowStyle arrowStyle) {
             switch (arrowStyle) {
-                case ArrowStyle.NonSpecified:
+                case ArrowStyle.Default:
                 case ArrowStyle.Normal:
 
                     DrawNormalArrow(g, brush, ref start, ref end, lineWidth);
@@ -1057,16 +1001,16 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                 var rb = cluster.RectangularBoundary;
                 double cy = cluster.BoundingBox.Top, cx = rb.Rect.Left + rb.Rect.Width / 2;
                 switch (subgraph.Attr.ClusterLabelMargin) {
-                    case LgNodeInfo.LabelPlacement.Top:
+                    case LabelPlacement.Top:
                         cy -= rb.TopMargin / 2;
                         break;
-                    case LgNodeInfo.LabelPlacement.Bottom:
+                    case LabelPlacement.Bottom:
                         cy -= rb.BottomMargin / 2;
                         break;
-                    case LgNodeInfo.LabelPlacement.Left:
+                    case LabelPlacement.Left:
                         cy -= rb.LeftMargin / 2;
                         break;
-                    case LgNodeInfo.LabelPlacement.Right:
+                    case LabelPlacement.Right:
                         cy -= rb.RightMargin / 2;
                         break;
                 }

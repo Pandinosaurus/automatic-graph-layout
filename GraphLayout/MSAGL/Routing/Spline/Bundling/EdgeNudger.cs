@@ -29,10 +29,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         }
 
 
-        bool CreateUnderlyingPolylines {
-            get { return bundlingSettings.CreateUnderlyingPolyline; }
-        }
-
+      
 
         protected override void RunInternal() {
             CreateMetroOrdering();
@@ -58,9 +55,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             CreateBundleBases();
             CreateSegmentsInsideHubs();
 
-#if TEST_MSAGL
             //ShowHubs(metroGraphData, metroOrdering, null);
-#endif
             CreateCurves();
         }
 
@@ -88,8 +83,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             }
             c.AddSegment(new LineSegment(currentEnd, FindCurveEnd(metroGraphData, metroOrdering, line)));
             edge.Curve = c;
-            if (CreateUnderlyingPolylines)
-                edge.SmoothedPolyline = BuildUnderlyingPolyline(start, currentEnd, hubSegsOfLine);
+            
         }
 
         static Point FindCurveStart(MetroGraphData metroGraphData, IMetroMapOrderingAlgorithm metroOrdering, Metroline metroline) {
@@ -110,13 +104,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             return bb.Points[index];
         }
 
-        internal static SmoothedPolyline BuildUnderlyingPolyline(Point start, Point end, IEnumerable<ICurve> cubicSegsOfLine) {
-            return null;
-            /*SmoothedPolyline sp = GetVanilaSmoothedPolyline(cubicSegsOfLine, start, end);
-            FleshOutSites(sp.HeadSite, cubicSegsOfLine);
-            return sp;*/
-        }
-
+        
         static IEnumerable<ICurve> HubSegsOfLine(MetroGraphData metroGraphData, IMetroMapOrderingAlgorithm metroOrdering, Metroline line) {
             for (PolylinePoint i = line.Polyline.StartPoint.Next; i.Next != null; i = i.Next)
                 yield return SegOnLineVertex(metroGraphData, metroOrdering, line, i);
@@ -168,7 +156,6 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
         #region Debug show
 
-#if TEST_MSAGL
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         static internal void ShowHubs(MetroGraphData metroGraphData, IMetroMapOrderingAlgorithm metroMapOrdering, Station station) {
             var ttt = GetAllDebugCurves(metroMapOrdering, metroGraphData);
@@ -277,7 +264,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
                         metroGraphData.Edges.Select(e => e.TargetPort.Curve)));
             return nodes.Select(n => new DebugCurve(40, 1, "black", n));
         }
-#endif
+
 
         #endregion
 
@@ -335,14 +322,13 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             if (ts * (p4 - p0) <= 0 && ts * te <= 0) {
                 //switch to Bezier
                 var curve2 = StandardBezier(p0, ts, p4, te);
-#if TEST_MSAGL
                 /*List<DebugCurve> dc = new List<DebugCurve>();
                 dc.Add(new DebugCurve(curve));
                 dc.Add(new DebugCurve(0.3, "black", curve2));
                 dc.Add(new DebugCurve(0.1, "red", new LineSegment(p0, p0 + 3 * ts)));
                 dc.Add(new DebugCurve(0.1, "blue", new LineSegment(p4, p4 + 3 * te)));
                 LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(dc);*/
-#endif
+
                 return curve2;
             }
 

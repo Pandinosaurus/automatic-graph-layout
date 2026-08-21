@@ -11,6 +11,7 @@ using Node=Microsoft.Msagl.Drawing.Node;
 using Point=Microsoft.Msagl.Core.Geometry.Point;
 using Rectangle=Microsoft.Msagl.Core.Geometry.Rectangle;
 using GeomEdge=Microsoft.Msagl.Core.Layout.Edge;
+using System.Runtime.Versioning;
 namespace FindEmptySpotSample {
     public partial class Form1 : Form {
         readonly ToolTip toolTip1 = new ToolTip();
@@ -27,9 +28,7 @@ namespace FindEmptySpotSample {
         void Form1_Load(object sender, EventArgs e) {
             gViewer.ObjectUnderMouseCursorChanged += new EventHandler<ObjectUnderMouseCursorChangedEventArgs>(gViewer_ObjectUnderMouseCursorChanged);
 
-#if TEST_MSAGL
            Microsoft.Msagl.GraphViewerGdi.DisplayGeometryGraph.SetShowFunctions();
-#endif
 
            CreateGraph();
         }
@@ -286,9 +285,7 @@ namespace FindEmptySpotSample {
 
 
 
-#if TEST_MSAGL
             Microsoft.Msagl.GraphViewerGdi.DisplayGeometryGraph.SetShowFunctions();
-#endif
 
 
             //settings.AddUpDownVerticalConstraints("3", "28");

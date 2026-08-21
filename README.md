@@ -5,21 +5,23 @@ MSAGL was developed in Microsoft by Lev Nachmanson, Sergey Pupyrev, Tim Dwyer, T
 
 ## Getting Started
 
-The simplest way to start with MSAGL in C# is to open GraphLayout.sln in Visual Studio, and and look at the Samples folder.
+The simplest way to start with MSAGL in C# is to open GraphLayout.sln in Visual Studio and browse the Samples folder.
+
+> **Note:** This repository requires Visual Studio with the UWP (Universal Windows Platform) development workload installed, as well as the Windows 10 SDK. If these are not installed, Visual Studio will recommend installing them when you open the solution. Please ensure these components are installed to successfully build the project.
 
 ## MSAGL Modules
 
-**The Core Layout engine (AutomaticGraphLayout.dll)** - [NuGet package](https://www.nuget.org/packages/AutomaticGraphLayout/)
+**The Core Layout engine (AutomaticGraphLayout.dll)** - [NuGet package](https://www.nuget.org/packages/Msagl/)
 This .NET asssembly contains the core layout functionality. Use this library if you just want MSAGL to perform the layout only and afterwards you will use a separate tool to perform the rendering and visalization.
 
-**The Drawing module (AutomaticGraphLayout.Drawing.dll)** - [NuGet package](https://www.nuget.org/packages/AutomaticGraphLayout.Drawing/)
+**The Drawing module (AutomaticGraphLayout.Drawing.dll)** - [NuGet package](https://www.nuget.org/packages/Msagl.Drawing/)
 The Definitions of different drawing attributes like colors, line styles, etc. It also contains definitions of a node class, an edge class, and a graph class. By using these classes a user can create a graph object and use it later for layout, and rendering.
 
 
-**A WPF control (Microsoft.Msagl.WpfGraphControl.dll)** - [NuGet package](https://www.nuget.org/packages/AutomaticGraphLayout.WpfGraphControl/)
+**A WPF control (Microsoft.Msagl.WpfGraphControl.dll)** - [NuGet package](https://www.nuget.org/packages/Msagl.WpfGraphControl/)
 The viewer control lets you visualize graphs and has and some other rendering functionality. Key features: (1) Pan and Zoom (2) Navigate Forward and Backward (3) tooltips and highlighting on graph entities (4) Search for and focus on graph entities.
 
-**A Windows Forms  Viewer control (Microsoft.Msagl.GraphViewerGdi.dll)** - [NuGet package](https://www.nuget.org/packages/AutomaticGraphLayout.GraphViewerGDI/)
+**A Windows Forms  Viewer control (Microsoft.Msagl.GraphViewerGdi.dll)** - [NuGet package](https://www.nuget.org/packages/Msagl.GraphViewerGDI/)
 The viewer control lets you visualize graphs and has and some other rendering functionality. Key features: (1) Pan and Zoom (2) Navigate Forward and Backward (3) tooltips and highlighting on graph entities (4) Search for and focus on graph entities.
 
 # Code Samples
@@ -72,7 +74,7 @@ samples can be found here…](https://www.microsoft.com/en-us/research/project/m
 GraphMaps lets you view very large graphs like oneline maps - as you zoom in more detail is revealed. Watch a [video](https://youtu.be/qCUP20dQqBo) that shows how GraphMaps works, and here is the [video](http://i11www.iti.kit.edu/~rprutkin/composers.wmv) of the previous version.
 
 ## Using GraphMaps
-* open Lg.sln and build the solution,
+* open GraphLayout.sln and build the solution,
 * run TestGraphMaps. 
 
 NOTES:
@@ -106,3 +108,14 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 # Build
 
 [![Build Status](https://dev.azure.com/MSAGL/MSAGLBuild/_apis/build/status/microsoft.automatic-graph-layout?branchName=master)](https://dev.azure.com/MSAGL/MSAGLBuild/_build/latest?definitionId=1&branchName=master)
+
+## Producing a release
+A release containing the binaries of agl.exe
+can be created automatically by a github action of
+".github\workflows\agl.yaml'.
+To invoke the action do the following. 
+Create a new tag in the form "v*". For example,  "git tag -a
+v_11 -m "some comment here"". Then execute git push with this
+tag: "git push origin v_11". These should trigger the release
+creation. Alternatively, you can use python script "createRelease.py",
+as following "python createRelease.py 1.1.1".

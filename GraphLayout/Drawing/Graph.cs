@@ -23,17 +23,6 @@ namespace Microsoft.Msagl.Drawing {
         public Subgraph RootSubgraph { get { return rootSubgraph; } set { rootSubgraph = value; } }
 
 
-#if TEST_MSAGL
-        [NonSerialized] Database dataBase;
-
-        /// <summary>
-        /// debug only
-        /// </summary>
-        public Database DataBase {
-            get { return dataBase; }
-            set { dataBase = value; }
-        }
-#endif
         Label label;
 
         /// <summary>
@@ -176,17 +165,7 @@ namespace Microsoft.Msagl.Drawing {
             get { return GeometryGraph != null ? GeometryGraph.Right + Attr.Border : 1; }
         }
 
-#if TEST_MSAGL
-        List<Node> history = new List<Node>();
-
-        /// <summary>
-        /// debug only visible
-        /// </summary>
-        public ICollection<Node> History {
-            get { return history; }
-            set { history = (List<Node>) value; }
-        }
-#endif
+      
 
         /// <summary>
         /// Creates a new node and returns it or returns the old node.
@@ -206,13 +185,11 @@ namespace Microsoft.Msagl.Drawing {
             if (SubgraphMap.TryGetValue(nodeId, out subgraph))
                 return subgraph;
 
-            ret = nodeMap[nodeId] as Node;
+
+            nodeMap.TryGetValue(nodeId, out ret);
             if (ret == null) {
                 ret = new Node(nodeId);
                 nodeMap[nodeId] = ret;
-#if TEST_MSAGL
-                history.Add(ret);
-#endif
             }
             return ret;
         }
@@ -239,21 +216,6 @@ namespace Microsoft.Msagl.Drawing {
             get { return nodeMap.Count; }
         }
 
-
-        /// <summary>
-        /// A lookup function.
-        /// </summary>
-        /// <param name="edgeId"></param>
-        /// <returns></returns>
-        public Edge EdgeById(string edgeId) {
-            if (idToEdges == null || idToEdges.Count == 0) {
-                foreach (Edge e in Edges)
-                    if (e.Attr.Id != null)
-                        idToEdges[e.Attr.Id] = e;
-            }
-
-            return idToEdges[edgeId] as Edge;
-        }
 
         /// <summary>
         /// The number of dges in the graph.
@@ -297,7 +259,7 @@ namespace Microsoft.Msagl.Drawing {
             foreach (Edge e in delendi)
                 RemoveEdge(e);
             NodeMap.Remove(node.Id);
-            GeometryGraph.Nodes.Remove(node.GeometryObject as Core.Layout.Node);
+            GeometryGraph?.Nodes.Remove(node.GeometryObject as Core.Layout.Node);
         }
 
         /// <summary>
@@ -335,7 +297,9 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="nodeId"></param>
         /// <returns></returns>
         public Node FindNode(string nodeId) {
-            return nodeMap[nodeId] as Node;
+            if (nodeMap.TryGetValue(nodeId, out Node n))
+                return n;
+            return null;
         }
 
         /// <summary>
@@ -346,7 +310,8 @@ namespace Microsoft.Msagl.Drawing {
         {
             if (GeometryGraph != null)
             {
-                Node node = nodeMap[nodeId] as Node;
+
+                nodeMap.TryGetValue(nodeId, out Node node);
                 if (node != null)
                 {
                     return GeometryGraph.FindNodeByUserData(node);
@@ -369,12 +334,12 @@ namespace Microsoft.Msagl.Drawing {
         /// <summary>
         /// It is very strange, but the layouts don't look not so good if I use Dictionary over strings
         /// </summary>
-        internal Hashtable nodeMap = new Hashtable();
+        internal SortedDictionary<string, Node> nodeMap = new SortedDictionary<string, Node>();
 
         /// <summary>
         /// labels -> nodes 
         /// </summary>
-        public Hashtable NodeMap {
+        public SortedDictionary<string,Node> NodeMap {
             get { return nodeMap; }
         }
 
@@ -383,15 +348,12 @@ namespace Microsoft.Msagl.Drawing {
         /// </summary>
         public Dictionary<string, Subgraph> SubgraphMap { get { return subgraphMap; } }
 
-#if TEST_MSAGL
         /// <summary>
-        /// visible only in debug
         /// </summary>
         /// <param name="nodeM"></param>
-        public void InitNodeMap(Hashtable nodeM) {
+        public void InitNodeMap(SortedDictionary<string, Node> nodeM) {
             nodeMap = nodeM;
         }
-#endif
 
         
         /// <summary>
@@ -415,10 +377,6 @@ namespace Microsoft.Msagl.Drawing {
                 }
             }
         }
-
-
-        Hashtable idToEdges = new Hashtable();
-       
 
 
         [SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")] string id;
@@ -494,8 +452,6 @@ namespace Microsoft.Msagl.Drawing {
             return GeometryGraphCreator.CreateLayoutSettings(this);
         }
 
-#if TEST_MSAGL
-
         List<Color> debugColors;
 
         /// <summary>
@@ -533,7 +489,6 @@ namespace Microsoft.Msagl.Drawing {
             get { return showControlPoints; }
             set { showControlPoints = value; }
         }
-#endif
 
         /// <summary>
         /// the geometry graph
@@ -543,7 +498,6 @@ namespace Microsoft.Msagl.Drawing {
             set { GeometryGraph = (GeometryGraph) value; }
         }
             
-#if TEST_MSAGL
         ///<summary>
         ///</summary>
         public List<ICurve> DebugICurves {
@@ -560,8 +514,6 @@ namespace Microsoft.Msagl.Drawing {
                     geomGraph.DebugCurves = value;
             }
         }
-#endif
-
         LayerConstraints layerConstraints = new LayerConstraints();
         Dictionary<string, Subgraph> subgraphMap=new Dictionary<string, Subgraph>();
         

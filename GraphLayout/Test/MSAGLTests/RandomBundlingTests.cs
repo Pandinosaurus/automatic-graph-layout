@@ -6,9 +6,7 @@
 
 using System;
 using System.Linq;
-#if TEST_MSAGL
 using Microsoft.Msagl.GraphViewerGdi;
-#endif
 using Microsoft.Msagl.Core.Geometry;
 using Microsoft.Msagl.Core.Geometry.Curves;
 using Microsoft.Msagl.Core.Layout;
@@ -123,7 +121,31 @@ namespace Microsoft.Msagl.UnitTests {
                 //DisplayGeometryGraph.ShowGraph(graph);
             }
         }
+        [TestMethod]
+        [Description("Three edges")]
+        public void TenEdges() {
+            //GraphViewerGdi.DisplayGeometryGraph.SetShowFunctions();
 
+            GeometryGraph graph = new GeometryGraph();
+            var a = new Node {
+                BoundaryCurve = CurveFactory.CreateCircle(15, new Point(65, 25)), UserData = "a",
+            };
+            graph.Nodes.Add(a);
+            var b = new Node {
+                UserData = "b",
+                BoundaryCurve = CurveFactory.CreateCircle(15, new Point(25, 25))
+            };
+            graph.Nodes.Add(b);
+            graph.Edges.Add(new Edge(b, a));
+            graph.Edges.Add(new Edge(b, a));
+            for (int i = 0; i < 8; i++)
+                graph.Edges.Add(new Edge(a, b));
+
+            var sr = new SplineRouter(graph, 2, 1.5, Math.PI / 6, new BundlingSettings() { EdgeSeparation = 1 });
+            sr.Run();
+            //GraphViewerGdi.DisplayGeometryGraph.ShowGraph(graph);
+
+        }
         [TestMethod]
         [Description("Random small graph")]
         public void RouteEdges_RandomGraph() {
@@ -157,9 +179,7 @@ namespace Microsoft.Msagl.UnitTests {
         public static void RsmContent() {
             const int ntest = 8;
             int iStart = 0;            
-#if TEST_MSAGL
             DisplayGeometryGraph.SetShowFunctions();
-#endif
             for (int i = iStart; i < ntest; i++) {
                 Random random = new Random(i);
                 int multiplier = random.Next() % 5 + 1;

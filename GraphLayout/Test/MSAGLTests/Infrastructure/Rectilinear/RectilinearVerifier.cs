@@ -196,7 +196,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
         /// <returns>The instantiated router</returns>
         internal virtual RectilinearEdgeRouterWrapper CreateRouter(IEnumerable<Shape> obstacles) {
             return new RectilinearEdgeRouterWrapper(obstacles, this.RouterPadding, this.RouterEdgeSeparation,
-                                                    this.RouteToCenterOfObstacles, this.UseSparseVisibilityGraph, this.UseObstacleRectangles) {
+                                                    this.RouteToCenterOfObstacles, this.UseSparseVisibilityGraph) {
                     WantNudger = this.WantNudger,
                     WantPaths = this.WantPaths,
                     WantVerify = this.WantVerify,
@@ -256,7 +256,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
             {
                 return new Shape(new Polyline(points) { Closed = true });
             }
-            return new Shape(new Polyline(points.Reverse()) { Closed = true });
+            return new Shape(new Polyline(((IEnumerable<Point>)points).Reverse()) { Closed = true });
         }
 
         internal static Shape CurveFromPoints(Point[] points)
@@ -463,7 +463,7 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
 
             // Add routing specifications.
             bool wantRouting = this.DefaultWantPorts && !NoPorts;
-            if ((null == routingEnum) && (null != freePorts) && !NoPorts)
+            if ((routingEnum!= null) && (freePorts!= null) && !NoPorts)
             {
                 routingEnum = CreateSourceToFreePortRoutings(router, obstacles, freePorts);
             }

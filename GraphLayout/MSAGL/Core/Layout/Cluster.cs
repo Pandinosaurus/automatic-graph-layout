@@ -10,9 +10,7 @@ namespace Microsoft.Msagl.Core.Layout {
     /// <summary>
     ///     A cluster has a list of nodes and a list of nested clusters
     /// </summary>
-#if TEST_MSAGL
     [Serializable]
-#endif
     public class Cluster : Node {
         bool isCollapsed;
 
@@ -361,16 +359,10 @@ namespace Microsoft.Msagl.Core.Layout {
             BoundingBox = r;
         }
 
-        bool isInInitialLayoutState;
-
+      
 
         
-        /// <summary>
-        ///     Has the cluster contents been moved or changed since an initial layout was applied?
-        /// </summary>
-        public bool IsInInitialLayoutState {
-            get { return isInInitialLayoutState; }
-        }
+        
 
 
         /// <summary>
@@ -379,7 +371,6 @@ namespace Microsoft.Msagl.Core.Layout {
         /// </summary>
         /// <param name="padding">amount of padding between child node bounding box and expected inner bounds</param>
         public void SetInitialLayoutState(double padding) {
-            isInInitialLayoutState = true;
             if (RectangularBoundary != null) {
                 RectangularBoundary.StoreDefaultMargin();
                 var childBounds =
@@ -396,7 +387,6 @@ namespace Microsoft.Msagl.Core.Layout {
         /// Set the initial layout state such that our current margin is stored and the new margin is taken from the given rb
         /// </summary>
         public void SetInitialLayoutState(RectangularClusterBoundary bounds) {
-            isInInitialLayoutState = true;
             if (RectangularBoundary != null && bounds != null) {
                 RectangularBoundary.StoreDefaultMargin();
                 RectangularBoundary.LeftMargin = bounds.LeftMargin;
@@ -410,7 +400,6 @@ namespace Microsoft.Msagl.Core.Layout {
         ///     sets IsInitialLayoutState to false and restores the default margins if we have a RectangularBoundary
         /// </summary>
         public void UnsetInitialLayoutState() {
-            isInInitialLayoutState = false;
             RectangularClusterBoundary rb = RectangularBoundary;
             if (rb != null) {
                 rb.RestoreDefaultMargin();

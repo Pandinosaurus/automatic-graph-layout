@@ -146,9 +146,7 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
             if (!this.allConstraints.IsEmpty)
             {
                 throw new InvalidOperationException(
-#if TEST_MSAGL
-                        "Cannot add Variables or Constraints once Solve() has been called"
-#endif // TEST_MSAGL
+                        "Cannot add Variables or Constraints once Solve() has been called" // TEST_MSAGL
                     );
             }
 
@@ -277,18 +275,14 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
             if (!this.allConstraints.IsEmpty)
             {
                 throw new InvalidOperationException(
-#if TEST_MSAGL
-                        "Cannot add Variables or Constraints once Solve() has been called"
-#endif // TEST_MSAGL
+                        "Cannot add Variables or Constraints once Solve() has been called" // TEST_MSAGL
                         );
             }
 
             if (left == right)
             {
                 throw new ArgumentException(
-#if TEST_MSAGL
-                        "Cannot add a constraint between a variable and itself"
-#endif // TEST_MSAGL
+                        "Cannot add a constraint between a variable and itself" // TEST_MSAGL
                         );
             }
 
@@ -384,17 +378,13 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
             if ((relationshipWeight <= 0) || double.IsNaN(relationshipWeight) || double.IsInfinity(relationshipWeight))
             {
                 throw new ArgumentOutOfRangeException("relationshipWeight"
-#if TEST_MSAGL
-                        , "Invalid Neighbor Weight"
-#endif // TEST_MSAGL
+                        , "Invalid Neighbor Weight" // TEST_MSAGL
                     );
             }
             if (variable1 == variable2)
             {
                 throw new InvalidOperationException(
-#if TEST_MSAGL
-                        "Cannot make a Variable a neighbor of itself"
-#endif // TEST_MSAGL
+                        "Cannot make a Variable a neighbor of itself" // TEST_MSAGL
                     );
             }
             variable1.AddNeighbor(variable2, relationshipWeight);
@@ -693,8 +683,7 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
                 // Don't check the return of Project; defer the termination check to SplitBlocks.
                 // This also examines limits post-Project; because it happens pre-SplitBlocks it ensures
                 // a feasible stopping state.
-                bool violationsFound;
-                if (!this.RunProject(out violationsFound))
+                if (!this.RunProject())
                 {
                     return;
                 }
@@ -707,10 +696,10 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
             }
         }
 
-        private bool RunProject(out bool violationsFound)
+        private bool RunProject()
         {
             ++this.solverSolution.OuterProjectIterations;
-            violationsFound = Project();
+            Project();
 
             // Examine limits post-Project but pre-SplitBlocks to ensure a feasible stopping state.
             return !CheckForLimitsExceeded();
@@ -820,7 +809,7 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
 
                 // Examine limits post-Project to ensure a feasible stopping state.  We don't test for 
                 // termination due to "no violations found" here, deferring that to the next iteration's PreProject().
-                if (!this.RunProject(out foundViolation))
+                if (!this.RunProject())
                 {
                     break;
                 }
@@ -843,8 +832,7 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
         {
             // Start off with one Project pass so the initial Qpsc state is feasible (not in violation
             // of constraints).  If this takes more than the max allowable time, we're done.
-            bool foundViolation;
-            return this.RunProject(out foundViolation);
+            return this.RunProject();
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic"), Conditional("TEST_MSAGL")]
@@ -1102,15 +1090,7 @@ namespace Microsoft.Msagl.Core.ProjectionSolver
                 blockTo.AddVariable(variable);
             }
             blockTo.UpdateReferencePosFromSums();
-            blockTo.DebugVerifyReferencePos();
 
-            // Do any final bookkeeping necessary.
-            blockTo.Debug_PostMerge(blockFrom);
-
-#if VERBOSE
-            System.Diagnostics.Debug.WriteLine("MergeBlocks result: {0}", blockTo);
-            blockTo.DumpState(null /* no prefix */);
-#endif // VERBOSE
 
             // Make the (no-longer-) violated constraint active.
             this.allConstraints.ActivateConstraint(violatedConstraint);

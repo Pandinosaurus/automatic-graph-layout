@@ -10,9 +10,7 @@ namespace Microsoft.Msagl.Core.Layout {
     /// <summary>
     ///     Keeps the curve of the edge and arrowhead positions
     /// </summary>
-#if TEST_MSAGL
     [Serializable]
-#endif
     public class EdgeGeometry {
         ICurve curve;
         SmoothedPolyline smoothedPolyline;
@@ -115,7 +113,7 @@ namespace Microsoft.Msagl.Core.Layout {
                 Curve.Translate(delta);
 
             if (SmoothedPolyline != null)
-                for (Site s = SmoothedPolyline.HeadSite, s0 = SmoothedPolyline.HeadSite;
+                for (CornerSite s = SmoothedPolyline.HeadSite, s0 = SmoothedPolyline.HeadSite;
                      s != null;
                      s = s.Next, s0 = s0.Next)
                     s.Point = s0.Point + delta;

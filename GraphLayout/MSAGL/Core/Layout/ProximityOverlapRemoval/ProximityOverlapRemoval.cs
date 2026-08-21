@@ -5,10 +5,9 @@ using System.Linq;
 using Microsoft.Msagl.Core.DataStructures;
 using Microsoft.Msagl.Core.Geometry;
 using Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval.StressEnergy;
-#if TEST_MSAGL
 using Microsoft.Msagl.Core.Geometry.Curves;
 using Microsoft.Msagl.DebugHelpers;
-#endif
+
 using Microsoft.Msagl.Routing;
 using Microsoft.Msagl.Routing.ConstrainedDelaunayTriangulation;
 using Point = Microsoft.Msagl.Core.Geometry.Point;
@@ -20,22 +19,12 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
     /// </summary>
     public class ProximityOverlapRemoval :IOverlapRemoval {
         Node[] _nodes;
-#if TEST_MSAGL
         /// <summary>
         /// 
         /// </summary>
         public static bool DebugMode { get; set; }
-
-
-         List<Polyline> trajectories;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public List<int> crossingsOverTime = new List<int>();
-#endif
-
-         OverlapRemovalSettings settings;
+        
+        OverlapRemovalSettings settings;
 
         /// <summary>
         ///     Overlap Removal Parameters
@@ -53,8 +42,6 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
         /// Stores the needed number of iterations for the last run.
         /// </summary>
         public int LastRunIterations { get; set; }
-
-         TimeSpan lastCpuTime;
 
         /// <summary>
         /// Bounding boxes of nodes.
@@ -309,61 +296,25 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
             // init some things
             InitNodePositionsAndBoxes(Settings, _nodes, out nodePositions, out nodeSizes);
             InitStressWithGraph(StressSolver, _nodes, nodePositions);
-#if TEST_MSAGL
-            //debugging the node movements
-            trajectories = new List<Polyline>(_nodes.Length);
-            //add starting positions
-            for (int i = 0; i < nodePositions.Length; i++) {
-                var poly = new Polyline();
-                poly.AddPoint(nodePositions[i]);
-                trajectories.Add(poly);
-            }
-#endif
 
-#if !SHARPKIT
-            var stopWatch = new Stopwatch();
-            stopWatch.Start();
-#endif
+
+
             bool scanlinePhase = false;
             int iter = 0;
             bool finished = false;
             while (!finished && ((iter++) < Settings.IterationsMax || !Settings.StopOnMaxIterat)) {
                 finished = DoSingleIteration(iter, ref scanlinePhase);
             }
-#if !SHARPKIT
-            stopWatch.Stop();
-#endif
             LastRunIterations = iter;
-#if TEST_MSAGL && !SHARPKIT
-            if (DebugMode) {
-                ShowTrajectoriesOfNodes(trajectories);
 
-                //LayoutAlgorithmSettings.ShowGraph(Graph);
-            }
-#endif
 
 
             SetPositionsToGraph();
-#if !SHARPKIT
-            PrintTimeSpan(stopWatch);
-#endif
             double nodeBoxArea = nodeSizes.Sum(r => r.Width*r.Height);
             var boundingBox = GetCommonRectangle(nodeSizes, nodePositions);
             double boundingBoxArea = boundingBox.Width*boundingBox.Height;
-//            nodePositions = null;
-//            nodeBoxes = null;
-#if TEST_MSAGL && !SHARPKIT
-            if (DebugMode) {
-                //LayoutAlgorithmSettings.ShowGraph(Graph);
-            }
-#endif
 
-#if !SHARPKIT
-            lastCpuTime = stopWatch.Elapsed;
             return;
-#else
-            return;// new TimeSpan(0);
-#endif
         }
 
         Rectangle GetCommonRectangle(Size[] sizes, Point[] points) {
@@ -388,30 +339,15 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
                 scanlinePhase = true;
                 numCrossings = CompleteProximityGraphWithRTree(ref numCrossings, proximityEdgesWithDistance);
             }
-#if TEST_MSAGL
-            int realCrossings = CountCrossingsWithRTree(nodeSizes);
-            crossingsOverTime.Add(realCrossings);
-            if (currentIteration%10 == 0)
-                System.Diagnostics.Debug.WriteLine("Scanline: {0}, Crossings: {1}", scanlinePhase, numCrossings);
-#endif
 
             if (numCrossings == 0) return true;
 
             AddStressFromProximityEdges(StressSolver, proximityEdgesWithDistance);
             List<Point> newPositions = StressSolver.IterateAll();
-
-            ShowCurrentMovementVectors(currentIteration, nodeSizes, nodePositions, newPositions,
-                                       proximityEdgesWithDistance,
-                                       null);
-
+            
             UpdatePointsAndBoxes(newPositions);
             //clear the data structures
             StressSolver.ClearVotings();
-#if TEST_MSAGL
-            for (int i = 0; i < nodePositions.Length; i++) {
-                trajectories[i].AddPoint(newPositions[i]);
-            }
-#endif
             return false;
         }
 
@@ -430,105 +366,7 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
         }
 
 
-#if TEST_MSAGL
-         void ShowTrajectoriesOfNodes(List<Polyline> trajectories) {
-//            if (trajectories.Count < 1 || trajectories[0].Count < 3) return;
-//
-//            double[] values = new double[trajectories.Count];
-//            for (int i = 1; i <= trajectories.Count; i++) {
-//                values[i - 1] = i;
-//                    }
-//            
-//            var colors=ColorInterpolator.LinearInterpolation(values, Color.Tomato, Color.SeaGreen);
-//            var cHex = ColorInterpolator.ColorToHex(colors);
-//            var list=trajectories.Select((p, i) => new DebugCurve(220, 2,
-//                                                         cHex[i], p));
-//            LayoutAlgorithmSettings.ShowDebugCurves(list.ToArray());
-        }
-#endif
 
-//         double GetAverageOverlap(List<Tuple<int, int, double, double>> proximityEdgesWithDistance,
-//                                         Point[] positions, Rectangle[] rectangles) {
-//            double overlap = 0;
-//            int counter = 0;
-//            foreach (Tuple<int, int, double, double> tuple in proximityEdgesWithDistance) {
-//                int nodeId1 = tuple.Item1;
-//                int nodeId2 = tuple.Item2;
-//                Point point1 = positions[nodeId1];
-//                Point point2 = positions[nodeId2];
-//
-//                if (nodeBoxes == null) throw new ArgumentNullException("nodeBoxes");
-//                if (nodeBoxes.Length <= nodeId1) return 0;
-//                if (nodeBoxes.Length <= nodeId2) return 0;
-//                double box1Width = nodeBoxes[nodeId1].Width;
-//                double box1Height = nodeBoxes[nodeId1].Height;
-//                double box2Width = nodeBoxes[nodeId2].Width;
-//                double box2Height = nodeBoxes[nodeId2].Height;
-//
-//                //Gansner et. al Scaling factor of distance
-//                double tw = (box1Width/2 + box2Width/2)/Math.Abs(point1.X - point2.X);
-//                double th = (box1Height/2 + box2Height/2)/Math.Abs(point1.Y - point2.Y);
-//                double t = Math.Max(Math.Min(tw, th), 1);
-//
-//                if (t == 1) continue; // no overlap between the bounding boxes
-//
-//                double distance = (t - 1)*(point1 - point2).Length;
-//                overlap += distance;
-//                counter++;
-//            }
-//
-//            overlap /= counter;
-//            return overlap;
-//        }
-
-        /// <summary>
-        /// For debugging only
-        /// </summary>
-        /// <param name="currentIteration"></param>
-        /// <param name="nodeSizes"></param>
-        /// <param name="nodePositions"></param>
-        /// <param name="newPositions"></param>
-        /// <param name="proximityEdgesWithDistance"></param>
-        /// <param name="finalGridVectors"></param>
-         static void ShowCurrentMovementVectors(int currentIteration, Size[] nodeSizes,
-                                                       Point[] nodePositions, List<Point> newPositions,
-                                                       List<Tuple<int, int, double, double>> proximityEdgesWithDistance,
-                                                       Point[] finalGridVectors) {
-#if TEST_MSAGL && !SHARPKIT
-            if (DebugMode && currentIteration%1 == 0) {
-                List<DebugCurve> curveList = new List<DebugCurve>();
-                var nodeBoxes = new Rectangle[nodeSizes.Length];
-                for(int i=0;i<nodeBoxes.Length;i++)
-                    nodeBoxes[i]=new Rectangle(nodeSizes[i], nodePositions[i]);
-                var nodeCurves =
-                    nodeBoxes.Select(
-                        v =>
-                        new DebugCurve(220, 1, "black", Curve.PolylineAroundClosedCurve(CurveFactory.CreateRectangle(v))));
-                curveList.AddRange(nodeCurves);
-                var vectors = nodePositions.Select(
-                    (p, i) =>
-                    new DebugCurve(220, 2, "red", new Polyline(p, newPositions[i]))).ToList();
-
-                foreach (Tuple<int, int, double, double> tuple in proximityEdgesWithDistance) {
-                    if (tuple.Item3 > 0) {
-                        curveList.Add(new DebugCurve(220, 1, "gray",
-                                                     new Polyline(nodePositions[tuple.Item1],
-                                                                  nodePositions[tuple.Item2])));
-                    }
-                }
-                curveList.AddRange(vectors);
-                if (finalGridVectors != null) {
-                    var gridFlowVectors = nodePositions.Select((p, i) =>
-                                                               new DebugCurve(220, 2, "blue",
-                                                                              new Polyline(p, p + finalGridVectors[i])))
-                                                       .ToList();
-                    curveList.AddRange(gridFlowVectors);
-                }
-
-                LayoutAlgorithmSettings.ShowDebugCurves(curveList.ToArray());
-            }
-#endif
-        }
 
         int CompleteProximityGraphWithRTree(ref int currentCrossings,
             List<Tuple<int, int, double, double>> proximityEdgesWithDistance) {
@@ -538,18 +376,6 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
         }
 
 
-#if !SHARPKIT
-         static void PrintTimeSpan(Stopwatch stopWatch) {
-            // Get the elapsed time as a TimeSpan value.
-            TimeSpan ts = stopWatch.Elapsed;
-            // Format and display the TimeSpan value.
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                                               ts.Hours, ts.Minutes, ts.Seconds,
-                                               ts.Milliseconds/10);
-            System.Diagnostics.Debug.WriteLine(elapsedTime, "RunTime");
-        }
-
-#endif
 
         internal static Point[] InitNodePositionsAndBoxes(OverlapRemovalSettings overlapRemovalSettings,
                                                           Node[] nodes, out Point[] nodePositions,
@@ -603,21 +429,6 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
             return numCrossings;
         }
 
-#if TEST_MSAGL
-         int CountCrossingsWithRTree(Size[] nodeSizes) {
-            RectangleNode<int,Point> rootNode =
-                RectangleNode<int,Point>.CreateRectangleNodeOnEnumeration(
-                    nodeSizes.Select((r, index) => new RectangleNode<int,Point>(index, new Rectangle(r,nodePositions[index]))));
-            int numCrossings = 0;
-            RectangleNodeUtils.CrossRectangleNodes<int, int, Point>(rootNode, rootNode,
-                                                             (a, b) => {
-                                                                 if (a == b) return;
-                                                                 numCrossings++;
-                                                             });
-
-            return numCrossings;
-        }
-#endif
 
          static Size[] GetNodeSizesByPaddingWithHalfSeparation(Node[] nodes, double nodeSeparation) {
             if (nodes == null) return null;
@@ -703,14 +514,6 @@ namespace Microsoft.Msagl.Core.Layout.ProximityOverlapRemoval {
         /// <returns></returns>
         public int GetLastRunIterations() {
             return LastRunIterations;
-        }
-
-        /// <summary>
-        /// CpuTime of the last run.
-        /// </summary>
-        /// <returns></returns>
-        public TimeSpan GetLastRunCpuTime() {
-            return lastCpuTime;
         }
     }
 }

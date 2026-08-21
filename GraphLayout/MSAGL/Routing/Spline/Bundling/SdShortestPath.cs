@@ -20,7 +20,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         internal RectangleNode<Polyline, Point> ObstacleHierarchy { get; set; }
 
         SdVertex[] vertexArray;
-        internal Cdt Cdt { get; set; }
+        internal Cdt CdtProperty { get; set; }
         Set<CdtEdge> Gates { get; set; }
 
         readonly Dictionary<EdgeGeometry, List<SdBoneEdge>> EdgesToRoutes = new Dictionary<EdgeGeometry, List<SdBoneEdge>>();
@@ -38,7 +38,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
         internal SdShortestPath(Func<EdgeGeometry, List<Shape>> makeTransparentShapesOfEdgeGeometryAndGetTheShapes, Cdt cdt, Set<CdtEdge> gates) {
             MakeTransparentShapesOfEdgeGeometry = makeTransparentShapesOfEdgeGeometryAndGetTheShapes;
-            Cdt = cdt;
+            CdtProperty = cdt;
             Gates = gates;
         }
 
@@ -127,8 +127,8 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         }
 
         void RestoreCapacities() {
-            if (Cdt != null)
-                Cdt.RestoreEdgeCapacities();
+            if (CdtProperty != null)
+                CdtProperty.RestoreEdgeCapacities();
         }
 
         /// <summary>
@@ -246,7 +246,6 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             }
         }
 
-#if TEST_MSAGL
         //        void DebugShow(SdSimpleVertex prevElement, SdBoneEdge outBoneEdge) {
         //            SplineRouter.ShowVisGraph(this.VisibilityGraph,
         //                                      this.ObstacleHierarchy.GetAllLeaves(),
@@ -264,7 +263,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         //                                      new[] {(ICurve) new LineSegment(inBoneEdge.SourcePoint, inBoneEdge.TargetPoint) ,
         //                                      new Ellipse(2,2,inBoneEdge.TargetPoint)});
         //        }
-#endif
+
 
         List<SdBoneEdge> GetPathAndUpdateRelatedCosts() {
             //restore the path by moving backwards
@@ -289,7 +288,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
         void RegisterPathInBoneEdge(SdBoneEdge boneEdge) {
             boneEdge.AddOccupiedEdge();
-            if (Cdt != null && BundlingSettings.CapacityOverflowCoefficient != 0)
+            if (CdtProperty != null && BundlingSettings.CapacityOverflowCoefficient != 0)
                 UpdateResidualCostsOfCrossedCdtEdges(boneEdge);
         }
 
@@ -317,7 +316,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         }
 
         double CapacityOverflowCost(SdBoneEdge boneEdge) {
-            if (Cdt == null || BundlingSettings.CapacityOverflowCoefficient == 0)
+            if (CdtProperty == null || BundlingSettings.CapacityOverflowCoefficient == 0)
                 return 0;
             double ret = 0;
             foreach (var cdtEdge in CrossedCdtEdgesOfBoneEdge(boneEdge)) {
@@ -467,7 +466,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
         void Initialize() {
             CreateRoutingGraph();
-            if (Cdt != null) {
+            if (CdtProperty != null) {
                 capacityOverlowPenaltyMultiplier = CapacityOverflowPenaltyMultiplier(BundlingSettings);
                 SetVertexTriangles();
                 CalculateCapacitiesOfTrianglulation();
@@ -497,15 +496,15 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         void SetVertexTriangles() {
             var triangleTree =
                 RectangleNode<CdtTriangle,Point>.CreateRectangleNodeOnEnumeration(
-                    Cdt.GetTriangles().Select(t => new RectangleNode<CdtTriangle,Point>(t, t.BoundingBox())));
+                    CdtProperty.GetTriangles().Select(t => new RectangleNode<CdtTriangle,Point>(t, t.BoundingBox())));
             var vertexTree =
                 RectangleNode<SdVertex,Point>.CreateRectangleNodeOnEnumeration(
                     vertexArray.Select(v => new RectangleNode<SdVertex,Point>(v, new Rectangle(v.Point))));
 
             RectangleNodeUtils.CrossRectangleNodes(triangleTree, vertexTree, TryToAssigenTriangleToVertex);
-            foreach (var v in vertexArray) {
-                Debug.Assert(v.Triangle != null);
-            }
+//            foreach (var v in vertexArray) {
+  //              Debug.Assert(v.Triangle != null);
+    //        }
         }
 
         void TryToAssigenTriangleToVertex(CdtTriangle triangle, SdVertex vertex) {

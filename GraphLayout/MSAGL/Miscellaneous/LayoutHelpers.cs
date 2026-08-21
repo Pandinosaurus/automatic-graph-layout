@@ -55,7 +55,7 @@ namespace Microsoft.Msagl.Miscellaneous {
             else {
                 var sugiyamaLayoutSettings = settings as SugiyamaLayoutSettings;
                 if (sugiyamaLayoutSettings != null)
-                    ProcessSugiamaLayout(geometryGraph, sugiyamaLayoutSettings, cancelToken);
+                    ProcessSugiyamaLayout(geometryGraph, sugiyamaLayoutSettings, cancelToken);
                 else {
                     Debug.Assert(settings is LgLayoutSettings);
                     LayoutLargeGraphWithLayers(geometryGraph, settings, cancelToken, tileDirectory);
@@ -83,13 +83,19 @@ namespace Microsoft.Msagl.Miscellaneous {
             largeGraphLayout.LabelingOfOneRun();
         }
 
-        static void ProcessSugiamaLayout(GeometryGraph geometryGraph, SugiyamaLayoutSettings sugiyamaLayoutSettings, CancelToken cancelToken) {
+        static void ProcessSugiyamaLayout(GeometryGraph geometryGraph, SugiyamaLayoutSettings sugiyamaLayoutSettings, CancelToken cancelToken) {
             PlaneTransformation originalTransform;
             var transformIsNotIdentity = HandleTransformIsNotIdentity(geometryGraph, sugiyamaLayoutSettings, out originalTransform);
 
             if (geometryGraph.RootCluster.Clusters.Any()) {
                 PrepareGraphForInitialLayoutByCluster(geometryGraph, sugiyamaLayoutSettings);
-                var initialBc = new InitialLayoutByCluster(geometryGraph, a => sugiyamaLayoutSettings);
+                var initialBc = 
+                    new InitialLayoutByCluster(
+                        geometryGraph, 
+                        //use different settings per each Cluster if available
+                        c => sugiyamaLayoutSettings.ClusterSettings.ContainsKey(c.UserData) 
+                                 ? sugiyamaLayoutSettings.ClusterSettings[c.UserData] 
+                                 : sugiyamaLayoutSettings);
                 initialBc.Run(cancelToken);
                 //route the rest of the edges, those between the clusters
                 var edgesToRoute = sugiyamaLayoutSettings.EdgeRoutingSettings.EdgeRoutingMode == EdgeRoutingMode.SplineBundling ? geometryGraph.Edges.ToArray() : geometryGraph.Edges.Where(e => e.Curve == null).ToArray();
@@ -186,20 +192,31 @@ namespace Microsoft.Msagl.Miscellaneous {
             //todo: what about parent edges!!!!
             var filteredEdgesToRoute =
                 edgesToRoute.Where(e => !e.UnderCollapsedCluster()).ToArray();
-            
+            if (filteredEdgesToRoute.Length == 0)
+                return;
             var ers = layoutSettings.EdgeRoutingSettings;
+            var nodes = new Set<Node>(geometryGraph.Nodes);
+            foreach (var e in filteredEdgesToRoute) {
+                nodes.Insert(e.Source);
+                nodes.Insert(e.Target);
+            }
+            if (geometryGraph.RootCluster != null) {
+                foreach (var c in geometryGraph.RootCluster.Clusters) {
+                    nodes.Insert(c);
+                }
+            }
             var mode = (straighLineRoutingThreshold == 0 || geometryGraph.Nodes.Count < straighLineRoutingThreshold) ? ers.EdgeRoutingMode : EdgeRoutingMode.StraightLine; 
             if (mode == EdgeRoutingMode.Rectilinear ||
                 mode == EdgeRoutingMode.RectilinearToCenter) {
+                double edgeSepar = layoutSettings.EdgeRoutingSettings == null ? 0 : layoutSettings.EdgeRoutingSettings.EdgeSeparationRectilinear;
                 RectilinearInteractiveEditor.CreatePortsAndRouteEdges(
+                    ers.CornerRadius,
                     layoutSettings.NodeSeparation / 3,
-                    layoutSettings.NodeSeparation / 3,
-                    geometryGraph.Nodes,
+                    nodes,
                     edgesToRoute,
                     mode,
                     true,
-                    ers.UseObstacleRectangles,
-                    ers.BendPenalty, cancelToken);
+                    ers.BendPenalty, edgeSepar, cancelToken);
             }
             else if (mode == EdgeRoutingMode.Spline || mode == EdgeRoutingMode.SugiyamaSplines) {
                 new SplineRouter(geometryGraph, filteredEdgesToRoute, ers.Padding, ers.PolylinePadding, ers.ConeAngle, null) {
@@ -231,20 +248,6 @@ namespace Microsoft.Msagl.Miscellaneous {
         }
 
 
-
-        /// <summary>
-        /// adaptes to the node boundary curve change
-        /// </summary>
-        public static void IncrementalLayout(GeometryGraph geometryGraph, Node node, SugiyamaLayoutSettings settings) {
-            if (settings == null)
-                return;
-            var engine = geometryGraph.AlgorithmData as LayeredLayoutEngine;
-
-            if (engine != null) {
-                engine.IncrementalRun(node);
-                PostRunTransform(geometryGraph, settings);
-            }
-        }
 
         static void PostRunTransform(GeometryGraph geometryGraph, SugiyamaLayoutSettings settings) {
             bool transform = !settings.Transformation.IsIdentity;
@@ -290,7 +293,7 @@ namespace Microsoft.Msagl.Miscellaneous {
 
         static void TransformUnderlyingPolyline(Edge e, SugiyamaLayoutSettings settings) {
             if (e.UnderlyingPolyline != null) {
-                for (Site s = e.UnderlyingPolyline.HeadSite; s != null; s = s.Next) {
+                for (CornerSite s = e.UnderlyingPolyline.HeadSite; s != null; s = s.Next) {
                     s.Point = settings.Transformation * s.Point;
                 }
             }

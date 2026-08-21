@@ -1,21 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <DefineConstants>TEST_MSAGL</DefineConstants>
+    <NuspecFile>AutomaticGraphLayout.Drawing.nuspec</NuspecFile>
+    <AssemblyName>Microsoft.Msagl.Drawing</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <NoWarn>1591, 1573</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="AutomaticGraphLayout.Drawing.nuspec" />
+    <None Include="AutomaticGraphLayout.Drawing.nuspec" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MSAGL\AutomaticGraphLayout.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 </Project>

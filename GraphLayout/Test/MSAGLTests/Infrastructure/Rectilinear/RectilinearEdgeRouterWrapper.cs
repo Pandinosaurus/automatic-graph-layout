@@ -16,7 +16,7 @@ using Microsoft.Msagl.Routing;
 using Microsoft.Msagl.Routing.Rectilinear;
 using Microsoft.Msagl.Routing.Rectilinear.Nudging;
 using Microsoft.Msagl.Routing.Visibility;
-
+using Path = Microsoft.Msagl.Routing.Rectilinear.Nudging.Path;
 namespace Microsoft.Msagl.UnitTests.Rectilinear
 {
     using VisualStudio.TestTools.UnitTesting;
@@ -58,8 +58,8 @@ namespace Microsoft.Msagl.UnitTests.Rectilinear
         internal TestContext TestContext { get; set; }
 
         internal RectilinearEdgeRouterWrapper(IEnumerable<Shape> obstacles, double padding, double cornerFitRadius,
-                                            bool routeToCenterOfObstacles, bool useSparseVisibilityGraph, bool useObstacleRectangles)
-            : base(obstacles, padding, cornerFitRadius, useSparseVisibilityGraph, useObstacleRectangles)
+                                            bool routeToCenterOfObstacles, bool useSparseVisibilityGraph)
+            : base(obstacles, padding, cornerFitRadius, useSparseVisibilityGraph, cornerFitRadius)
         {
             this.WantPaths = true;
             this.WantNudger = true;

@@ -29,7 +29,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using Microsoft.Msagl.Core.DataStructures;
 using Edge = Microsoft.Msagl.Core.Layout.Edge;
 using System;
-#if TEST_MSAGL
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -42,6 +41,7 @@ using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.Layout.Layered;
 using Size=System.Drawing.Size;
 using GeomNode = Microsoft.Msagl.Core.Layout.Node;
+using System.Text.Json;
 
 namespace Microsoft.Msagl.GraphViewerGdi{
     /// <summary>
@@ -53,7 +53,7 @@ namespace Microsoft.Msagl.GraphViewerGdi{
         ///</summary>
         ///<param name="geomGraph"></param>
         static public void ShowGraph(GeometryGraph geomGraph) {
-            var graph = new Graph();
+             var graph = new Graph();
             geomGraph.UpdateBoundingBox();
             var bb = geomGraph.BoundingBox;
             bb.Pad(geomGraph.Margins);
@@ -245,39 +245,6 @@ namespace Microsoft.Msagl.GraphViewerGdi{
         }
 
 
-        /// <summary>
-        /// displays the database
-        /// </summary>
-        /// <param name="db"></param>
-        /// <param name="curves"></param>
-        public static void ShowDataBase(Database db, params ICurve[] curves){
-            var g = new Graph("");
-            AllocateDebugCurves(g);
-
-            var graphBox = new Rectangle(db.Anchors[0].LeftTop);
-
-            var cl = new List<ICurve>(curves);
-
-            foreach (Anchor a in db.Anchors){
-                graphBox.Add(a.LeftTop);
-                graphBox.Add(a.RightBottom);
-                cl.Add(a.PolygonalBoundary);
-            }
-
-            AddCurvesToGraph(cl, g);
-
-            Point del = (graphBox.LeftBottom - graphBox.RightTop)/10;
-            graphBox.Add(graphBox.LeftBottom + del);
-            graphBox.Add(graphBox.RightTop - del);
-            var gg = new GeometryGraph{BoundingBox = graphBox};
-            g.DataBase = db;
-            g.GeometryGraph = gg;
-            
-            DisplayGraph(g, new Form());
-            db.nodesToShow = null;
-        }
-
-
         private static void DisplayGraph(Graph g, Form form){
             var gviewer = new GViewer{BuildHitTree = false};
             form.SuspendLayout();
@@ -383,7 +350,6 @@ namespace Microsoft.Msagl.GraphViewerGdi{
         /// </summary>
         public static void SetShowFunctions(){
             LayoutAlgorithmSettings.Show = new Show(ShowCurves);
-            LayoutAlgorithmSettings.ShowDatabase = new ShowDatabase(ShowDataBase);
             LayoutAlgorithmSettings.ShowDebugCurves=new ShowDebugCurves(ShowDebugCurves);
             LayoutAlgorithmSettings.ShowDebugCurvesEnumeration = new ShowDebugCurvesEnumeration(ShowDebugCurvesEnumeration);
             LayoutAlgorithmSettings.ShowGraph = ShowGraph;
@@ -442,5 +408,5 @@ namespace Microsoft.Msagl.GraphViewerGdi{
           
         }
     }
+
 }
-#endif

@@ -1,0 +1,59 @@
+on:
+  push:
+     tags:
+        - v* # You will need to provide a tag of the form 'v* ...' with your push command:
+           # For example git tag -a v11 -m "bug fix" && git push origin v11
+name: Create Release
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          
+  deploy:
+    runs-on: windows-latest
+    steps:
+     - name: Checkout Code
+       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      
+     - name: Add msbuild to PATH
+       uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3.0.0
+       
+     - name: Setup NuGet
+       uses: NuGet/setup-nuget@b26b823c478ee115be5c9403e62c90b0bf943843 # v3.1.0
+       env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'     
+
+     - name: Restore NuGet Packages
+       run: nuget restore GraphLayout/GraphLayout.sln
+ 
+     - name: Build agl.csproj
+       run: msbuild GraphLayout\tools\agl\agl.csproj /p:Configuration=Release /p:Platform="AnyCPU" /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
+
+     - name: aglzip
+       run: 7z a agl.zip .\GraphLayout\tools\agl\bin\Release -r
+
+     - name: Upload binaries to release
+       uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # 2.11.5
+       with:
+         repo_token: ${{ secrets.GITHUB_TOKEN }}
+         file: agl.zip
+         asset_name: agl.zip
+         tag: ${{ github.ref }}
+         overwrite: true
+         body: "The zip file of agl driver"
+

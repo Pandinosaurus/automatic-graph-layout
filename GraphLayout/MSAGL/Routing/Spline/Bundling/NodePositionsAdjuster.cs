@@ -36,9 +36,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         /// apply a number of heuristics to improve current routing
         /// </summary>
         internal static void FixRouting(MetroGraphData metroGraphData, BundlingSettings bundlingSettings) {
-#if TEST_MSAGL
             Debug.Assert(metroGraphData.looseIntersections.HubPositionsAreOK());
-#endif
             //TimeMeasurer.DebugOutput("Initial cost = " + CostCalculator.Cost(metroGraphData, bundlingSettings));
             //TimeMeasurer.DebugOutput("Initial cost of forces: " + CostCalculator.CostOfForces(metroGraphData, bundlingSettings));
 
@@ -49,9 +47,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             var step = 0;
             int MaxSteps = 10;
             while (++step < MaxSteps) {
-/*#if TEST_MSAGL
-                Debug.Assert(metroGraphData.looseIntersections.HubPositionsAreOK());
-#endif*/
+/*                Debug.Assert(metroGraphData.looseIntersections.HubPositionsAreOK());*/
                 //heuristics to improve routing
                 
                 bool progress = adjuster.GlueConflictingNodes();
@@ -133,13 +129,10 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
         double GetCurrentHubRadius(Station node) {
             if (node.IsRealNode) {
-                return node.BoundaryCurve.BoundingBox.Diagonal/2;
-            }
-            else {
-                double idealR = node.cachedIdealRadius;
-                //TODO: which one?
+                return node.BoundaryCurve.BoundingBox.Diagonal / 2;
+            } else {
+                double idealR = node.cachedIdealRadius = HubRadiiCalculator.CalculateIdealHubRadiusWithNeighbors(this.metroGraphData, this.bundlingSettings, node);
                 double r = metroGraphData.looseIntersections.GetMinimalDistanceToObstacles(node, node.Position, idealR);
-                //double r = idealR;
                 Debug.Assert(r <= idealR);
                 foreach (var adj in node.Neighbors)
                     r = Math.Min(r, (node.Position - adj.Position).Length);
@@ -547,11 +540,11 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             var enterableForEdgeNodeB = metroGraphData.looseIntersections.ObstaclesToIgnoreForBundle(node, b);
 
             var crossingsOfEdgeNodeA = InteractiveEdgeRouter.IntersectionsOfLineAndRectangleNodeOverPolyline(new LineSegment(node.Position, a.Position), metroGraphData.LooseTree);
-            if (!crossingsOfEdgeNodeA.All(ii => enterableForEdgeNodeB.Contains(ii.Segment1)))
+            if (crossingsOfEdgeNodeA.Exists(ii => !enterableForEdgeNodeB.Contains(ii.Segment1)))
                 return false;
 
             var crossingsOfEdgeab = InteractiveEdgeRouter.IntersectionsOfLineAndRectangleNodeOverPolyline(new LineSegment(a.Position, b.Position), metroGraphData.LooseTree);
-            if (!crossingsOfEdgeab.All(ii => enterableForEdgeNodeB.Contains(ii.Segment1)))
+            if (crossingsOfEdgeab.Exists(ii => !enterableForEdgeNodeB.Contains(ii.Segment1)))
                 return false;
 
             //2. check cost

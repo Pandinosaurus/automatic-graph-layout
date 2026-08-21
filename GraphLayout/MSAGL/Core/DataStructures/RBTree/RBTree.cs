@@ -3,9 +3,7 @@ using System.Collections.Generic;
 
 namespace Microsoft.Msagl.Core.DataStructures {
 
-#if TEST_MSAGL
     [Serializable]
-#endif
     internal class RbTree<T> : IEnumerable<T> {
   
         /// <summary>
@@ -17,11 +15,6 @@ namespace Microsoft.Msagl.Core.DataStructures {
         /// <returns>the first node where predicate holds or null</returns>
         internal RBNode<T> FindFirst(Func<T, bool> predicate) {
             return FindFirst(root, predicate);
-        }
-
-        internal RbTree() {
-            comparer = new DefaultComperer<T>();
-            root = nil = new RBNode<T>(RBColor.Black);
         }
 
         RBNode<T> FindFirst(RBNode<T> n, Func<T, bool> p) {

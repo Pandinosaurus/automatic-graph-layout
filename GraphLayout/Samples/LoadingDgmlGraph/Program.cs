@@ -1,5 +1,6 @@
 ﻿
 
+using System;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.Layout.Incremental;
 using Microsoft.Msagl.Layout.Layered;
@@ -7,10 +8,9 @@ using Microsoft.Msagl.Layout.MDS;
 
 namespace LoadingDgmlGraph {
     class Program {
+        [STAThread]
         static void Main(string[] args) {
-#if TEST_MSAGL
             Microsoft.Msagl.GraphViewerGdi.DisplayGeometryGraph.SetShowFunctions();
-#endif
             //create a form
             System.Windows.Forms.Form form = new System.Windows.Forms.Form();
             //create a viewer object
@@ -23,8 +23,7 @@ namespace LoadingDgmlGraph {
             form.Controls.Add(viewer);
             form.ResumeLayout();
 					//create a graph object
-﻿#if GraphModel
-
+﻿
             Graph graph = DgmlParser.DgmlParser.Parse("fullstring.dgml");
 
             SugiyamaLayoutSettings ss = graph.LayoutAlgorithmSettings as SugiyamaLayoutSettings;
@@ -41,7 +40,7 @@ namespace LoadingDgmlGraph {
             
             viewer.Graph = graph;
             form.ShowDialog();
-#endif
+
 				}
     }
 }

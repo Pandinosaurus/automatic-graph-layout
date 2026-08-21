@@ -23,9 +23,9 @@ namespace Microsoft.Msagl.Drawing {
 
         internal IViewerObject ActiveDraggedObject { get; set; }
 
-        internal Site PolylineVertex { get; set; }
+        internal CornerSite PolylineVertex { get; set; }
 
-        Tuple<Site, PolylineCornerType> cornerInfo;
+        Tuple<CornerSite, PolylineCornerType> cornerInfo;
 
         readonly Dictionary<IViewerObject, VoidDelegate> decoratorRemovalsDict =
             new Dictionary<IViewerObject, VoidDelegate>();
@@ -632,6 +632,8 @@ namespace Microsoft.Msagl.Drawing {
                         DragSomeObjects(e);
                     else if (InsertingEdge)
                         MouseMoveWhenInsertingEdgeAndPressingLeftButton(e);
+                    else
+                        MouseMoveLiveSelectObjectsForDragging(e);
                 } else if(InsertingEdge)
                     HandleMouseMoveWhenInsertingEdgeAndNotPressingLeftButton(e);
             }            
@@ -675,7 +677,7 @@ namespace Microsoft.Msagl.Drawing {
                     port = CreateOrUpdateCurvePort(t, geomNode, port);
                 else
                     port = PointIsInside(mousePosition, ((Node) viewerNode.DrawingObject).GeometryNode.BoundaryCurve)
-                               ? CreateFloatingPort(geomNode, ref mousePosition)
+                               ? CreateFloatingPort(geomNode, mousePosition)
                                : null;
             }
             else 
@@ -692,7 +694,7 @@ namespace Microsoft.Msagl.Drawing {
             return port;
         }
 
-        FloatingPort CreateFloatingPort( GeometryNode geomNode, ref Point location) {
+        FloatingPort CreateFloatingPort( GeometryNode geomNode, Point location) {
             return new FloatingPort(geomNode.BoundaryCurve, location);
         }
 
@@ -744,7 +746,7 @@ namespace Microsoft.Msagl.Drawing {
             if (NeedToCreateBoundaryPort(mousePosition, node, out t))
                 port = CreateOrUpdateCurvePort(t, geomNode, port);
             else
-                port = CreateFloatingPort(geomNode, ref mousePosition);
+                port = CreateFloatingPort(geomNode, mousePosition);
         }
 
         static GeometryNode GeometryNode(IViewerNode node) {
@@ -831,8 +833,7 @@ namespace Microsoft.Msagl.Drawing {
             var geomGraph = viewer.Graph.GeometryGraph;
             var settings = viewer.Graph.LayoutAlgorithmSettings;
             RectilinearInteractiveEditor.CreatePortsAndRouteEdges(settings.NodeSeparation / 3, 1, geomGraph.Nodes, geomGraph.Edges,
-                                         settings.EdgeRoutingSettings.EdgeRoutingMode, true,
-                                         settings.EdgeRoutingSettings.UseObstacleRectangles, settings.EdgeRoutingSettings.BendPenalty);
+                                         settings.EdgeRoutingSettings.EdgeRoutingMode, true, settings.EdgeRoutingSettings.BendPenalty);
             var labelPlacer = new EdgeLabelPlacement(geomGraph);
             labelPlacer.Run();
 
@@ -878,11 +879,6 @@ namespace Microsoft.Msagl.Drawing {
                 else
                     InsertEdgeOnMouseUp();
                 args.Handled = true;
-            }
-            else if (LeftMouseButtonWasPressed) {
-                if (ToggleEntityPredicate(viewer.ModifierKeys, PressedMouseButtons, true) &&
-                    (viewer.ModifierKeys & ModifierKeys.Shift) != ModifierKeys.Shift)
-                    SelectEntitiesForDraggingWithRectangle(args);
             }
             Dragging = false;
             geomGraphEditor.ForgetDragging();
@@ -943,9 +939,9 @@ namespace Microsoft.Msagl.Drawing {
         }
 
         void FinishRoutingEdge() {
-            EdgeGeometry.SourceArrowhead = this.EdgeAttr.ArrowheadAtSource != ArrowStyle.None ? new Arrowhead() { Length = this.EdgeAttr.ArrowheadLength } : null;
+            EdgeGeometry.SourceArrowhead = this.EdgeAttr.ArrowheadAtSource == ArrowStyle.None ? null : new Arrowhead() { Length = this.EdgeAttr.ArrowheadLength };
 
-            EdgeGeometry.TargetArrowhead = this.EdgeAttr.ArrowheadAtTarget != ArrowStyle.None ? new Arrowhead() { Length = this.EdgeAttr.ArrowheadLength } : null;
+            EdgeGeometry.TargetArrowhead = this.EdgeAttr.ArrowheadAtTarget == ArrowStyle.None ? null : new Arrowhead() { Length = this.EdgeAttr.ArrowheadLength };
 
             if (TargetOfInsertedEdge != SourceOfInsertedEdge) {
                 InteractiveEdgeRouter.TryToRemoveInflectionsAndCollinearSegments(EdgeGeometry.SmoothedPolyline);
@@ -1019,7 +1015,7 @@ namespace Microsoft.Msagl.Drawing {
 
         void CheckIfDraggingPolylineVertex(MsaglMouseEventArgs e) {
             if (SelectedEdge != null && SelectedEdge.Edge.GeometryEdge.UnderlyingPolyline!=null) {
-                Site site = SelectedEdge.Edge.GeometryEdge.UnderlyingPolyline.HeadSite;
+                CornerSite site = SelectedEdge.Edge.GeometryEdge.UnderlyingPolyline.HeadSite;
                 do {
                     if (MouseScreenPointIsCloseEnoughToVertex(site.Point,
                                                               SelectedEdge.RadiusOfPolylineCorner +
@@ -1097,19 +1093,19 @@ namespace Microsoft.Msagl.Drawing {
         /// <returns>null if a corner is not found</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Polyline"),
          SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures")]
-        public Tuple<Site, PolylineCornerType> AnalyzeInsertOrDeletePolylineCorner(Point point, double tolerance) {
+        public Tuple<CornerSite, PolylineCornerType> AnalyzeInsertOrDeletePolylineCorner(Point point, double tolerance) {
             if (SelectedEdge == null)
                 return null;
 
             tolerance += SelectedEdge.Edge.Attr.LineWidth;
-            Site corner=GeometryGraphEditor.FindCornerForEdit(SelectedEdge.Edge.GeometryEdge.UnderlyingPolyline, point,
+            CornerSite corner=GeometryGraphEditor.FindCornerForEdit(SelectedEdge.Edge.GeometryEdge.UnderlyingPolyline, point,
                                                            tolerance);
             if (corner != null)
-                return new Tuple<Site, PolylineCornerType>(corner, PolylineCornerType.CornerToDelete);
+                return new Tuple<CornerSite, PolylineCornerType>(corner, PolylineCornerType.CornerToDelete);
 
             corner = GeometryGraphEditor.GetPreviousSite(SelectedEdge.Edge.GeometryEdge, point);
             if (corner != null)
-                return new Tuple<Site, PolylineCornerType>(corner, PolylineCornerType.PreviousCornerForInsertion);
+                return new Tuple<CornerSite, PolylineCornerType>(corner, PolylineCornerType.PreviousCornerForInsertion);
 
             return null;
         }
@@ -1208,7 +1204,7 @@ namespace Microsoft.Msagl.Drawing {
         /// <param name="point"></param>
         /// <param name="previousCorner"></param>
         [SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly",MessageId = "Polyline")]
-        public void InsertPolylineCorner(Point point,Site previousCorner) {
+        public void InsertPolylineCorner(Point point,CornerSite previousCorner) {
             geomGraphEditor.InsertSite(SelectedEdge.Edge.GeometryEdge,point,previousCorner,SelectedEdge);
             viewer.Invalidate(SelectedEdge);
         }
@@ -1223,7 +1219,7 @@ namespace Microsoft.Msagl.Drawing {
         /// delete the polyline corner, shortcut it.
         /// </summary>
         /// <param name="corner"></param>
-        public void DeleteCorner(Site corner) {
+        public void DeleteCorner(CornerSite corner) {
             geomGraphEditor.DeleteSite(SelectedEdge.Edge.GeometryEdge,corner,SelectedEdge);
             viewer.Invalidate(SelectedEdge);
             viewer.OnDragEnd(new IViewerObject [] { SelectedEdge });
@@ -1264,6 +1260,12 @@ namespace Microsoft.Msagl.Drawing {
                 }
                 e.Handled = true;
             }
+        }
+        void MouseMoveLiveSelectObjectsForDragging(MsaglMouseEventArgs e) {
+            UnselectEverything();
+            if (ToggleEntityPredicate(viewer.ModifierKeys, PressedMouseButtons, true) &&
+                (viewer.ModifierKeys & ModifierKeys.Shift) != ModifierKeys.Shift)
+                SelectEntitiesForDraggingWithRectangle(e);
         }
 
         void DrawEdgeInteractivelyToLocation(MsaglMouseEventArgs e) {

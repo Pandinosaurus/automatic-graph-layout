@@ -54,10 +54,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// It is passed to the drawing routine
     /// </summary>
     internal sealed class DGraph : DObject, IViewerGraph {
-#if TEST_MSAGL
-
         internal static bool DrawControlPoints { get; set; }
-#endif
 
         public override DrawingObject DrawingObject {
             get { return DrawingGraph; }
@@ -272,24 +269,6 @@ namespace Microsoft.Msagl.GraphViewerGdi {
 
 
         internal void DrawGraph(Graphics g) {
-            #region drawing of database for debugging only
-
-#if TEST_MSAGL
-            Graph dg = DrawingGraph;
-
-            if (dg.DataBase != null) {
-                var myPen = new Pen(Color.Blue, (float)(1 / 1000.0));
-                Draw.DrawDataBase(g, myPen, dg);
-            }
-
-            if (NeedToDrawDebugStuff()) {
-                var myPen = new Pen(Color.Blue, (float)(1 / 1000.0));
-                Draw.DrawDebugStuff(g, this, myPen);
-            }
-
-#endif
-
-            #endregion
 
             if (drawingGraph.Attr.Border > 0)
                 DrawGraphBorder(drawingGraph.Attr.Border, g);
@@ -324,14 +303,6 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                 DrawPortAtLocation(g, Viewer.TargetPortLocation);
         }
 
-#if TEST_MSAGL
-        bool NeedToDrawDebugStuff() {
-            return drawingGraph.DebugCurves != null ||
-                   drawingGraph.DebugICurves != null && drawingGraph.DebugICurves.Count > 0 ||
-                   drawingGraph.DataBase != null ||
-                   drawingGraph.GeometryGraph != null;
-        }
-#endif
 
         static void DrawUnderlyingPolyline(Graphics g, DEdge editedEdge) {
             SmoothedPolyline underlyingPolyline = editedEdge.DrawingEdge.GeometryEdge.UnderlyingPolyline;
@@ -400,7 +371,6 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                 if (dEdge.DrawingEdge.GeometryEdge.Label != null)
                     Draw.DrawLabel(graphics, dEdge.Label);
 
-#if TEST_MSAGL
                 if (DrawControlPoints) {
                     ICurve iCurve = dEdge.DrawingEdge.GeometryEdge.Curve;
                     var c = iCurve as Curve;
@@ -419,7 +389,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                     }
                 }
 
-#endif
+
             }
         }
 
@@ -463,9 +433,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                     case Shape.Ellipse:
                     case Shape.DrawFromGeometry:
 
-#if TEST_MSAGL
                     case Shape.TestShape:
-#endif
                         pen.EndCap = LineCap.Square;
                         Draw.DrawFromMsaglCurve(g, pen, dnode);
                         break;
@@ -598,12 +566,12 @@ namespace Microsoft.Msagl.GraphViewerGdi {
             if (cluster.RectangularBoundary == null) {
                 var lp = dNode.DrawingNode.Attr.ClusterLabelMargin;
                 cluster.RectangularBoundary = new RectangularClusterBoundary() {
-                    BottomMargin = lp == LgNodeInfo.LabelPlacement.Bottom ? height : margin,
-                    LeftMargin = lp == LgNodeInfo.LabelPlacement.Left ? height : margin,
-                    RightMargin = lp == LgNodeInfo.LabelPlacement.Right ? height : margin,
-                    TopMargin = lp == LgNodeInfo.LabelPlacement.Top ? height : margin,
-                    MinWidth = lp == LgNodeInfo.LabelPlacement.Top || lp == LgNodeInfo.LabelPlacement.Bottom ? width : 0,
-                    MinHeight = lp == LgNodeInfo.LabelPlacement.Left || lp == LgNodeInfo.LabelPlacement.Right ? width : 0,
+                    BottomMargin = lp == LabelPlacement.Bottom ? height : margin,
+                    LeftMargin = lp == LabelPlacement.Left ? height : margin,
+                    RightMargin = lp == LabelPlacement.Right ? height : margin,
+                    TopMargin = lp == LabelPlacement.Top ? height : margin,
+                    MinWidth = lp == LabelPlacement.Top || lp == LabelPlacement.Bottom ? width : 0,
+                    MinHeight = lp == LabelPlacement.Left || lp == LabelPlacement.Right ? width : 0,
                 };
             }
             // Filippo Polo: I'm taking this out because I've modified the drawing of a double circle

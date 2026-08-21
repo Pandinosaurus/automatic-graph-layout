@@ -14,10 +14,8 @@ using Microsoft.Msagl.Routing.Spline.Bundling;
 using Microsoft.Msagl.Routing.Spline.ConeSpanner;
 using Microsoft.Msagl.Routing.Visibility;
 
-#if TEST_MSAGL
 using Microsoft.Msagl.DebugHelpers;
 using System.Diagnostics.CodeAnalysis;
-#endif
 
 namespace Microsoft.Msagl.Routing {
   ///<summary>
@@ -25,7 +23,7 @@ namespace Microsoft.Msagl.Routing {
   ///</summary>
   public class SplineRouter : AlgorithmBase {
     /// <summary>
-    /// setting this to true forces the calculation to go on even when node overlaps are present
+    /// setting this to true forces the calculation to go on even when node overlaps are present  
     /// </summary>
     /// 
     bool continueOnOverlaps = true;
@@ -34,11 +32,7 @@ namespace Microsoft.Msagl.Routing {
     Shape[] rootShapes;
     IEnumerable<EdgeGeometry> edgeGeometriesEnumeration {
       get {
-        if (this._edges != null) {
-          foreach (var item in this._edges.Select(e => e.EdgeGeometry)) {
-            yield return item;
-          }
-        }
+        return this._edges?.Select(e => e.EdgeGeometry) ?? Enumerable.Empty<EdgeGeometry>();
       }
     }
     double coneAngle;
@@ -114,10 +108,8 @@ namespace Microsoft.Msagl.Routing {
       ValidateArg.IsPositive(tightPadding, "tightPadding");
       ValidateArg.IsPositive(loosePadding, "loosePadding");
       ValidateArg.IsNotNull(edges, "edges");
-#if TEST_MSAGL
       // do not run the following check, cluster containment may be incorrect in float mode - need to make sure we handle this
       //graph.CheckClusterConsistency();
-#endif
 
       this._edges = edges.ToArray();
 
@@ -143,9 +135,7 @@ namespace Microsoft.Msagl.Routing {
     /// <param name="inParentEdges"></param>
     /// <param name="outParentEdges"></param>
     public SplineRouter(GeometryGraph graph, double tightPadding, double loosePadding, double coneAngle, List<Edge> inParentEdges, List<Edge> outParentEdges) {
-#if TEST_MSAGL
-      graph.CheckClusterConsistency();
-#endif
+      //graph.CheckClusterConsistency();
       geometryGraph = graph;
       LoosePadding = loosePadding;
       this.tightPadding = tightPadding;
@@ -247,9 +237,7 @@ namespace Microsoft.Msagl.Routing {
 
     void BindLooseShapes() {
       looseRoot = new Shape();
-#if TEST_MSAGL
       looseRoot.UserData = (string)root.UserData + "x";
-#endif
       foreach (var shape in root.Children) {
         var looseShape = shapesToTightLooseCouples[shape].LooseShape;
         BindLooseShapesUnderShape(shape);
@@ -605,6 +593,8 @@ namespace Microsoft.Msagl.Routing {
     Set<Shape> EdgePassport(Edge edge) {
       EdgeGeometry edgeGeometry = edge.EdgeGeometry;
       var ret = new Set<Shape>();
+      if (edgeGeometry.SourcePort == null || edgeGeometry.TargetPort == null)
+        return ret;
       var sourceShape = portsToShapes[edgeGeometry.SourcePort];
       var targetShape = portsToShapes[edgeGeometry.TargetPort];
 
@@ -745,7 +735,6 @@ namespace Microsoft.Msagl.Routing {
     }
     #region debugging
 
-#if TEST_MSAGL
     [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
     static internal void AnotherShowMethod(VisibilityGraph visGraph,
         Port sourcePort, Port targetPort, IEnumerable<Shape> obstacleShapes, ICurve curve) {
@@ -779,7 +768,6 @@ namespace Microsoft.Msagl.Routing {
         return "lightgreen";
       return e.IsPassable == null || e.IsPassable() ? "green" : "red";
     }
-#endif
 
     #endregion
 
@@ -883,7 +871,7 @@ namespace Microsoft.Msagl.Routing {
     }
 
     private void ProcessHookAnyWherePorts(Set<Point> setOfPortLocations) {
-      foreach (var edgeGeometry in edgeGeometriesEnumeration) {
+      foreach (var edgeGeometry in edgeGeometriesEnumeration) {                
         if (!(edgeGeometry.SourcePort is HookUpAnywhereFromInsidePort || edgeGeometry.SourcePort is ClusterBoundaryPort))
           setOfPortLocations.Insert(edgeGeometry.SourcePort.Location);
         if (!(edgeGeometry.TargetPort is HookUpAnywhereFromInsidePort || edgeGeometry.TargetPort is ClusterBoundaryPort))
@@ -933,21 +921,19 @@ namespace Microsoft.Msagl.Routing {
     /// </summary>
     internal bool Bidirectional { get; set; }
 
-#if TEST_MSAGL
     [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-    static internal void ShowVisGraph(VisibilityGraph tmpVisGraph, IEnumerable<Polyline> obstacles, IEnumerable<ICurve> greenCurves, IEnumerable<ICurve> redCurves) {
-      var l = new List<DebugCurve>(tmpVisGraph.Edges.Select(e => new DebugCurve(100, 1,
-          e.IsPassable != null && e.IsPassable() ? "green" : "black"
-          , new LineSegment(e.SourcePoint, e.TargetPoint))));
-      if (obstacles != null)
-        l.AddRange(obstacles.Select(p => new DebugCurve(100, 1, "brown", p)));
-      if (greenCurves != null)
-        l.AddRange(greenCurves.Select(p => new DebugCurve(100, 10, "navy", p)));
-      if (redCurves != null)
-        l.AddRange(redCurves.Select(p => new DebugCurve(100, 10, "red", p)));
-      LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(l);
-    }
-#endif
+        static internal void ShowVisGraph(VisibilityGraph tmpVisGraph, IEnumerable<Polyline> obstacles, IEnumerable<ICurve> greenCurves = null, IEnumerable<ICurve> redCurves = null) {
+          var l = new List<DebugCurve>(tmpVisGraph.Edges.Select(e => new DebugCurve(100, 1,
+              e.IsPassable != null && e.IsPassable() ? "green" : "black"
+              , new LineSegment(e.SourcePoint, e.TargetPoint))));
+          if (obstacles != null)
+            l.AddRange(obstacles.Select(p => new DebugCurve(100, 1, "brown", p)));
+          if (greenCurves != null)
+            l.AddRange(greenCurves.Select(p => new DebugCurve(100, 10, "navy", p)));
+          if (redCurves != null)
+            l.AddRange(redCurves.Select(p => new DebugCurve(100, 10, "red", p)));
+          LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(l);
+        }
     void TryToCreateNewEdgeAndSetIsPassable(VisibilityEdge edge, Shape looseShape) {
       var e = visGraph.FindEdge(edge.SourcePoint, edge.TargetPoint);
       if (e != null) return;
@@ -1032,9 +1018,7 @@ namespace Microsoft.Msagl.Routing {
       }
       rootWasCreated = true;
       root = new Shape();
-#if TEST_MSAGL
       root.UserData = "root";
-#endif
       foreach (var rootShape in rootShapes)
         root.AddChild(rootShape);
     }
@@ -1046,7 +1030,6 @@ namespace Microsoft.Msagl.Routing {
     }
 
 
-#if TEST_MSAGL
     // ReSharper disable UnusedMember.Local
     [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
     static void Show(
@@ -1058,7 +1041,6 @@ namespace Microsoft.Msagl.Routing {
               c => new DebugCurve(50, 1, DebugCurve.Colors[r.Next(DebugCurve.Colors.Length - 1)], c)).Concat(
                   edgeGeometries.Select(e => new DebugCurve(100, 1, "red", e.Curve))));
     }
-#endif
 
 
     internal static Dictionary<Shape, Set<Shape>> GetAncestorSetsMap(IEnumerable<Shape> shapes) {

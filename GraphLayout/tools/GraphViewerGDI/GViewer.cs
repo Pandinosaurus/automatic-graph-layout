@@ -57,6 +57,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// gets or sets the drawing layout editor
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public LayoutEditor LayoutEditor {
       get { return layoutEditor; }
       set { layoutEditor = value; }
@@ -66,6 +67,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// if is set to true then the mouse left click on a node and dragging the cursor to 
     /// another node will create an edge and add it to the graph
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public bool InsertingEdge {
       get { return insertingEdge; }
       set {
@@ -82,6 +84,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// the length of arrowheads for newly inserted edges
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public double ArrowheadLength {
       get {
         if (Graph != null && Graph.LayoutAlgorithmSettings is SugiyamaLayoutSettings)
@@ -110,9 +113,9 @@ namespace Microsoft.Msagl.GraphViewerGdi {
 
       panel.Invalidate(MapSourceRectangleToScreenRectangle(box));
     }
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal Point SourcePortLocation { get; private set; }
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal bool SourcePortIsPresent { get; private set; }
     /// <summary>
     /// 
@@ -122,9 +125,9 @@ namespace Microsoft.Msagl.GraphViewerGdi {
       TargetPortIsPresent = true;
       TargetPortLocation = portLocation;
     }
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal Point TargetPortLocation { get; private set; }
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal bool TargetPortIsPresent { get; private set; }
 
     /// <summary>
@@ -358,7 +361,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     }
 
     #endregion
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal EntityFilterDelegate EntityFilterDelegate { get; set; }
     /// <summary>
     /// 
@@ -370,16 +373,17 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// support for mouse selection 
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public bool BuildHitTree {
       get { return buildHitTree; }
       set { buildHitTree = value; }
     }
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal DGraph DGraph {
       get { return dGraph; }
       set { dGraph = value; }
     }
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal Graph OriginalGraph {
       get { return originalGraph; }
       set {
@@ -391,11 +395,12 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// If set to false no layout is calculated. It is presumed that the layout is precalculated.
     /// </summary>
-    public bool NeedToCalculateLayout {
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+     public bool NeedToCalculateLayout {
       get { return needToCalculateLayout; }
       set { needToCalculateLayout = value; }
     }
-
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     internal BBNode BbNode {
       get {
         if (bBNode == null) {
@@ -410,6 +415,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// the last MSAGL file name used when saving-opening an MSAGL file
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public string FileName {
       get { return fileName; }
       set { fileName = value; }
@@ -418,6 +424,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// Controls the pan button.
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public bool PanButtonPressed {
       get { return panButton.Checked; }
       set { panButton.Checked = value; }
@@ -426,6 +433,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// Controls the window zoom button.
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public bool WindowZoomButtonPressed {
       get { return windowZoomButton.Checked; }
       set { windowZoomButton.Checked = value; }
@@ -435,6 +443,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// If the mininal side of the zoom window is shorter than the threshold then zoom 
     /// does not take place
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public double ZoomWindowThreshold {
       get { return zoomWindowThreshold; }
       set { zoomWindowThreshold = value; }
@@ -444,6 +453,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// SelectedObject can be detected if the distance in inches between it and 
     /// the cursor is less than MouseHitDistance
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public double MouseHitDistance {
       get { return mouseHitDistance; }
       set { mouseHitDistance = value; }
@@ -459,6 +469,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// 
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public double TightOffsetForRouting {
       get { return tightOffsetForRouting; }
       set { tightOffsetForRouting = value; }
@@ -467,6 +478,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// 
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public double LooseOffsetForRouting {
       get { return looseOffsetForRouting; }
       set { looseOffsetForRouting = value; }
@@ -475,6 +487,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// 
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public double OffsetForRelaxingInRouting {
       get { return offsetForRelaxingInRouting; }
       set { offsetForRelaxingInRouting = value; }
@@ -500,9 +513,12 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// Setting the Graph property shows the graph in the control
     /// </summary>
     /// 
+    //[DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public Graph Graph {
       get { return OriginalGraph; }
       set {
+        cancellationTokenSource = new CancellationTokenSource();
         DGraph = null;
         ClearBackwardForwardList();
         if (value != null) {
@@ -511,7 +527,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
             try {
               if (NeedToCalculateLayout) {
                 OriginalGraph.GeometryGraph = null;
-                LayoutAndCreateDGraph();
+                LayoutAndCreateDGraph(cancellationTokenSource.Token);
                 InitiateDrawing();
               }
               else {
@@ -765,15 +781,15 @@ namespace Microsoft.Msagl.GraphViewerGdi {
       var a = source.GeometryNode.Center;
       var b = target.GeometryNode.Center;
       if (source == target) {
-        Site start = new Site(a);
-        Site end = new Site(b);
+        CornerSite start = new CornerSite(a);
+        CornerSite end = new CornerSite(b);
         var mid1 = source.GeometryNode.Center;
         mid1.X += (source.GeometryNode.BoundingBox.Width / 3 * 2);
         var mid2 = mid1;
         mid1.Y -= source.GeometryNode.BoundingBox.Height / 2;
         mid2.Y += source.GeometryNode.BoundingBox.Height / 2;
-        Site mid1s = new Site(mid1);
-        Site mid2s = new Site(mid2);
+        CornerSite mid1s = new CornerSite(mid1);
+        CornerSite mid2s = new CornerSite(mid2);
         start.Next = mid1s;
         mid1s.Previous = start;
         mid1s.Next = mid2s;
@@ -784,9 +800,9 @@ namespace Microsoft.Msagl.GraphViewerGdi {
         geometryEdge.Curve = geometryEdge.UnderlyingPolyline.CreateCurve();
       }
       else {
-        Site start = new Site(a);
-        Site end = new Site(b);
-        Site mids = new Site(a * 0.5 + b * 0.5);
+        CornerSite start = new CornerSite(a);
+        CornerSite end = new CornerSite(b);
+        CornerSite mids = new CornerSite(a * 0.5 + b * 0.5);
         start.Next = mids;
         mids.Previous = start;
         mids.Next = end;
@@ -961,7 +977,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     public IViewerEdge RouteEdge(DrawingEdge drawingEdge) {
       drawingEdge.Label = new Label();
       Edge geometryEdge = drawingEdge.GeometryEdge = new Edge();
-      if (drawingEdge.Attr.ArrowheadAtSource != ArrowStyle.NonSpecified &&
+      if (drawingEdge.Attr.ArrowheadAtSource != ArrowStyle.Default &&
           drawingEdge.Attr.ArrowheadAtSource != ArrowStyle.None)
         geometryEdge.EdgeGeometry.SourceArrowhead = new Arrowhead { Length = drawingEdge.Attr.ArrowheadLength };
       if (drawingEdge.Attr.ArrowheadAtSource != ArrowStyle.None)
@@ -1069,6 +1085,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// the padding used to route a new inserted edge around the nodes
     /// </summary>        
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public double PaddingForEdgeRouting {
       get {
         return Graph == null
@@ -1095,8 +1112,8 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <summary>
     /// the current transform to the client viewport
     /// </summary>
-    public PlaneTransformation
-        Transform {
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+    public PlaneTransformation Transform {
       get {
         if (transformation == null)
           InitTransform();
@@ -1153,7 +1170,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
 
     // The thread running the layout process
     Thread layoutThread;
-
+    private CancellationTokenSource cancellationTokenSource;
     // A wait handle for ensuring layouting has started
     readonly EventWaitHandle layoutWaitHandle =
         new EventWaitHandle(false,
@@ -1171,6 +1188,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <see cref="AsyncLayoutProgress"/>, and layouting can be aborted with 
     /// <see cref="AbortAsyncLayout"/>.
     /// </remarks>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public bool AsyncLayout {
       get { return asyncLayout; }
       set { asyncLayout = value; }
@@ -1187,34 +1205,39 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// Abort an asynchronous layout activity.
     /// </summary>
     public void AbortAsyncLayout() {
-      if (layoutThread != null) {
-        layoutThread.Abort();
-        layoutThread = null;
-      }
+      if (cancellationTokenSource != null)
+        {
+            cancellationTokenSource.Cancel();
+            layoutThread = null;
+        }
     }
 
     // Is called from Graph setter.
     void SetGraphAsync(Graph value) {
       if (layoutThread != null) {
-        layoutThread.Abort();
-        layoutThread = null;
+          AbortAsyncLayout();          
       }
-      layoutThread = new Thread((ThreadStart)delegate {
-        var args = new LayoutProgressEventArgs(LayoutProgress.LayingOut, null);
-        lock (value) {
-          try {
-            bool needToCalc = NeedToCalculateLayout;
-            layoutWaitHandle.Set();
-            OriginalGraph = value;
-            if (needToCalc) {
-              if (AsyncLayoutProgress != null)
-                AsyncLayoutProgress(this, args);
-              LayoutAndCreateDGraph();
-            }
-            else {
-              DGraph = DGraph.CreateDGraphFromPrecalculatedDrawingGraph(OriginalGraph, this);
-            }
-            Invoke(
+      cancellationTokenSource = new CancellationTokenSource();
+      CancellationToken token = cancellationTokenSource.Token;
+
+      layoutThread = new Thread(() =>
+        {
+            var args = new LayoutProgressEventArgs(LayoutProgress.LayingOut, null);
+            lock (value)
+            {
+                try
+                {
+                    bool needToCalc = NeedToCalculateLayout;
+                    layoutWaitHandle.Set();
+                    OriginalGraph = value;
+                    if (needToCalc) {
+                        AsyncLayoutProgress?.Invoke(this, args);
+                        LayoutAndCreateDGraph(token);
+                    }
+                    else {
+                        DGraph = DGraph.CreateDGraphFromPrecalculatedDrawingGraph(OriginalGraph, this);
+                    }
+Invoke(
                 (Invoker)
                 delegate {
                   if (AsyncLayoutProgress != null) {
@@ -1227,25 +1250,16 @@ namespace Microsoft.Msagl.GraphViewerGdi {
                     AsyncLayoutProgress(this, args);
                   }
                 });
-          }
-          catch (ThreadAbortException) {
-            if (AsyncLayoutProgress != null) {
-              args.progress = LayoutProgress.Aborted;
-              AsyncLayoutProgress(this, args);
+                }
+                catch (OperationCanceledException) {
+                    AbortAsyncLayout();
+                }
+                finally
+                {
+                    layoutThread = null;
+                }
             }
-            // rethrown automatically
-          }
-          //catch (Exception e) {
-          //    // must not leak through any exception, otherwise appl. terminates
-          //    if (AsyncLayoutProgress != null) {
-          //        args.progress = LayoutProgress.Aborted;
-          //        args.diagnostics = e.ToString();
-          //        AsyncLayoutProgress(this, args);
-          //    }
-          //}
-          layoutThread = null;
-        }
-      });
+        });
       // Before we start the thread, ensure the control is created.
       // Otherwise Invoke inside of the thread might fail.
       CreateControl();
@@ -1457,11 +1471,10 @@ namespace Microsoft.Msagl.GraphViewerGdi {
           //some info is known only after the first drawing
 
           if (bBNode == null && BuildHitTree
-#if TEST_MSAGL
                         && (
                      dGraph.DrawingGraph.DebugICurves == null
                  )
-#endif
+
                         ) {
             DGraph.BuildBBHierarchy();
             bBNode = DGraph.BbNode;
@@ -1515,7 +1528,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     }
 
     [SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions")]
-    void LayoutAndCreateDGraph() {
+    void LayoutAndCreateDGraph(CancellationToken cancellationToken) {
       switch (CurrentLayoutMethod) {
         case LayoutMethod.SugiyamaScheme:
           if (!(OriginalGraph.LayoutAlgorithmSettings is SugiyamaLayoutSettings))
@@ -1538,9 +1551,6 @@ namespace Microsoft.Msagl.GraphViewerGdi {
       if (localSugiyamaSettings != null) {
         // Insert hard coded constraints for tests
 
-#if TEST_MSAGL
-        TestSomeGraphs();
-#endif
       }
       OriginalGraph.CreateGeometryGraph();
       GeometryGraph geometryGraph = OriginalGraph.GeometryGraph;
@@ -1558,55 +1568,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
       }
     }
 
-#if TEST_MSAGL
-    void TestSomeGraphs() {
-      if (fileName.EndsWith("lovett.dot")) {
-        OriginalGraph.LayerConstraints.AddUpDownVerticalConstraint(OriginalGraph.FindNode("Logica"),
-                                                                   OriginalGraph.FindNode("IBM"));
-        OriginalGraph.LayerConstraints.AddUpDownVerticalConstraint(OriginalGraph.FindNode("IBM"),
-                                                                   OriginalGraph.FindNode("Taligent"));
-        OriginalGraph.LayerConstraints.AddUpDownVerticalConstraint(OriginalGraph.FindNode("Taligent"),
-                                                                   OriginalGraph.FindNode("Walkabout"));
-        OriginalGraph.LayerConstraints.AddUpDownVerticalConstraint(OriginalGraph.FindNode("Walkabout"),
-                                                                   OriginalGraph.FindNode("Microsoft"));
-        OriginalGraph.LayerConstraints.AddSameLayerNeighbors(OriginalGraph.FindNode("MSXML"),
-                                                             OriginalGraph.FindNode("sysxml"),
-                                                             OriginalGraph.FindNode("xsharp"),
-                                                             OriginalGraph.FindNode("xmled"),
-                                                             OriginalGraph.FindNode("Progression"));
-      }
-      else if (fileName.EndsWith("dependenciesForTaskCrashTest.dot")) {
-        OriginalGraph.LayerConstraints.PinNodesToSameLayer(
-            OriginalGraph.FindNode("C1"),
-            OriginalGraph.FindNode("C2"),
-            OriginalGraph.FindNode("C3"),
-            OriginalGraph.FindNode("C4"),
-            OriginalGraph.FindNode("C5"),
-            OriginalGraph.FindNode("C6"),
-            OriginalGraph.FindNode("C7"),
-            OriginalGraph.FindNode("C8"),
-            OriginalGraph.FindNode("C9"),
-            OriginalGraph.FindNode("C10"));
-        OriginalGraph.LayerConstraints.PinNodesToSameLayer(
-            OriginalGraph.FindNode("R1"),
-            OriginalGraph.FindNode("R2"),
-            OriginalGraph.FindNode("R3"),
-            OriginalGraph.FindNode("R4"),
-            OriginalGraph.FindNode("R5"),
-            OriginalGraph.FindNode("R6"),
-            OriginalGraph.FindNode("R7"),
-            OriginalGraph.FindNode("R8"),
-            OriginalGraph.FindNode("R9"),
-            OriginalGraph.FindNode("R10"));
-      }
-      else if (fileName.EndsWith("andrei.dot")) {
-        OriginalGraph.LayerConstraints.AddUpDownVerticalConstraint(OriginalGraph.FindNode("open"),
-                                                                   OriginalGraph.FindNode("bezier"));
-        OriginalGraph.LayerConstraints.AddUpDownVerticalConstraint(OriginalGraph.FindNode("closed"),
-                                                                   OriginalGraph.FindNode("ellipse"));
-      }
-    }
-#endif
+
 
     /// <summary>
     /// 
@@ -2119,8 +2081,9 @@ namespace Microsoft.Msagl.GraphViewerGdi {
     /// <param name="graph"></param>
     /// <returns></returns>
     public object CalculateLayout(Graph graph) {
+        cancellationTokenSource = new CancellationTokenSource();
       OriginalGraph = graph;
-      LayoutAndCreateDGraph();
+      LayoutAndCreateDGraph(cancellationTokenSource.Token);
       return DGraph;
     }
 
@@ -2305,9 +2268,7 @@ namespace Microsoft.Msagl.GraphViewerGdi {
       Point originalCenter = node.GeometryNode.Center;
       node.GeometryNode.BoundaryCurve = NodeBoundaryCurves.GetNodeBoundaryCurve(node, width, height).Clone();
       node.GeometryNode.BoundaryCurve.Translate(originalCenter);
-
-      LayoutHelpers.IncrementalLayout(Graph.GeometryGraph, node.GeometryNode,
-                                      Graph.LayoutAlgorithmSettings as SugiyamaLayoutSettings);
+    
       foreach (IViewerObject en in Entities)
         Invalidate(en);
 

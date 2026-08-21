@@ -15,18 +15,14 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
     /// <summary>
     /// following paper "Orthogonal Connector Routing" which is included in the project
     /// </summary>
-#if TEST_MSAGL
-    public
-#else
-        internal
-#endif
-    class Nudger {
+    public class Nudger {
 
         bool HasGroups {
             get { return (null != HierarchyOfGroups) && (HierarchyOfGroups.Count > 0); }
         }
 
         Dictionary<AxisEdge, Polyline> axisEdgesToObstaclesTheyOriginatedFrom;
+        private double minimalEdgeSeparation = 2;
 
         List<Path> Paths { get; set; }
 
@@ -37,17 +33,17 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
         ///  "nudge" paths to decrease the number of intersections and stores the results inside WidePaths of "paths"
         /// </summary>
         /// <param name="paths">paths through the graph</param>
-        /// <param name="cornerFitRad">two parallel paths should be separated by this distance if it is feasible</param>
+        /// <param name="edgeSeparation">two parallel paths should be separated by this distance if it is feasible</param>
         /// <param name="obstacles">polygonal convex obstacles organized in a tree; the obstacles here are padded original obstacles</param>
         /// <param name="ancestorsSets"></param>
         /// <returns></returns>
-        internal Nudger(IEnumerable<Path> paths, double cornerFitRad, IEnumerable<Polyline> obstacles, 
+        internal Nudger(IEnumerable<Path> paths, double edgeSeparation, IEnumerable<Polyline> obstacles, 
             Dictionary<Shape, Set<Shape>> ancestorsSets) {
             AncestorsSets = ancestorsSets;
             HierarchyOfGroups = RectangleNode<Shape, Point>.CreateRectangleNodeOnEnumeration(
                     ancestorsSets.Keys.Where(shape => shape.IsGroup).Select(group => new RectangleNode<Shape, Point>(group, group.BoundingBox)));
             Obstacles = obstacles;
-            EdgeSeparation = 2 * cornerFitRad;
+            EdgeSeparation = Math.Max(2 * edgeSeparation, MinimalEdgeSeparation);
             Paths = new List<Path>(paths);
             HierarchyOfObstacles =
                 RectangleNode<Polyline, Point>.CreateRectangleNodeOnEnumeration(
@@ -161,7 +157,6 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
         Direction NudgingDirection { get; set; }
 
         #region debugging
-#if TEST_MSAGL
         static internal ICurve[] GetCurvesForShow(IEnumerable<Path> paths, IEnumerable<Polyline> obstacles) {
             var ret = new List<ICurve>();
             foreach (var path in paths) {
@@ -173,7 +168,7 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
             ret.AddRange(obstacles.Cast<ICurve>());
             return ret.ToArray();
         }
-#endif
+
         #endregion
         void DrawPaths() {
             SetWidthsOfArrowheads();
@@ -281,7 +276,6 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
         }
 
         #region debug
-#if TEST_MSAGL
         internal static void ShowPathsFromPoints(IEnumerable<Path> paths, IEnumerable<Polyline> enumerable) {
             var dd = new List<DebugCurve>();
             if (enumerable != null)
@@ -498,7 +492,7 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
                 debugCurves.AddRange(obstacles.Select(poly => new DebugCurve(50, 0.3, color, poly)));
             return debugCurves;
         }
-#endif
+
         #endregion
 
         void CreateConstraintsBetweenLongestSegments() {
@@ -577,7 +571,6 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
             return direction == Direction.North ? segment.Start.X : -segment.Start.Y;
         }
 
-#if TEST_MSAGL
         // ReSharper disable UnusedMember.Local
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         void ShowSegmentBounds(LongestNudgedSegment segment) {
@@ -607,7 +600,7 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
             LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(dd.Concat(new[] { seg }));
 
         }
-#endif
+
 
         List<LongestNudgedSegment> LongestNudgedSegs { get; set; }
 
@@ -656,6 +649,7 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
         /// 
         /// </summary>
         protected Dictionary<Port, Shape> PortToShapes { get; private set; }
+        public double MinimalEdgeSeparation { get => minimalEdgeSeparation; private set => minimalEdgeSeparation = value; }
 
         Set<Shape> AncestorsForPort(Port port) {
             Shape shape;
@@ -883,15 +877,15 @@ namespace Microsoft.Msagl.Routing.Rectilinear.Nudging {
         /// this function defines the final path coordinates
         /// </summary>
         /// <param name="paths">the set of paths, point sequences</param>
-        /// <param name="cornerFitRadius">the radius of the arc inscribed into the path corners</param>
+        /// <param name="edgeSeparation">the radius of the arc inscribed into the path corners</param>
         /// <param name="paddedObstacles">an enumeration of padded obstacles</param>
         /// <param name="ancestorsSets"></param>
         /// <param name="removeStaircases"></param>
         /// <returns>the mapping of the path to its modified path</returns>
-        internal static void NudgePaths(IEnumerable<Path> paths, double cornerFitRadius, IEnumerable<Polyline> paddedObstacles, Dictionary<Shape, Set<Shape>> ancestorsSets, bool removeStaircases) {
+        internal static void NudgePaths(IEnumerable<Path> paths, double edgeSeparation, IEnumerable<Polyline> paddedObstacles, Dictionary<Shape, Set<Shape>> ancestorsSets, bool removeStaircases) {
             if (!paths.Any())
                 return;
-            var nudger = new Nudger(paths, cornerFitRadius, paddedObstacles, ancestorsSets);
+            var nudger = new Nudger(paths, edgeSeparation, paddedObstacles, ancestorsSets);
             nudger.Calculate(Direction.North, true);
             nudger.Calculate(Direction.East, false);
             nudger.Calculate(Direction.North, false);

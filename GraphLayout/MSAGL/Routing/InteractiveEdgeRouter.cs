@@ -12,9 +12,7 @@ using Microsoft.Msagl.Layout.Initial;
 using Microsoft.Msagl.Layout.LargeGraphLayout;
 using Microsoft.Msagl.Routing.Spline.ConeSpanner;
 using Microsoft.Msagl.Routing.Visibility;
-#if TEST_MSAGL
 using Microsoft.Msagl.DebugHelpers;
-#endif
 
 namespace Microsoft.Msagl.Routing {
     /// <summary>
@@ -369,7 +367,6 @@ namespace Microsoft.Msagl.Routing {
 
         #endregion
 
-#if TEST_MSAGL
         // void ShowPolylineAndObstaclesWithGraph() {
         //    List<ICurve> ls = new List<ICurve>();
         //    foreach (Polyline poly in this.obstacleCalculator.TightObstacles)
@@ -380,7 +377,7 @@ namespace Microsoft.Msagl.Routing {
         //    ls.Add(Polyline);
         //    SugiyamaLayoutSettings.Show(ls.ToArray());
         //}
-#endif
+
         //pull the polyline out from the corners
         void RelaxPolyline() {
             RelaxedPolylinePoint relaxedPolylinePoint = CreateRelaxedPolylinePoints(_polyline);
@@ -567,7 +564,6 @@ namespace Microsoft.Msagl.Routing {
             relaxedPoint.PolylinePoint.Point = relaxedPoint.OriginalPosition + v;
         }
 
-#if TEST_MSAGL
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
 // ReSharper disable UnusedMember.Local
         internal void ShowPolylineAndObstacles(params ICurve[] curves)
@@ -605,7 +601,7 @@ namespace Microsoft.Msagl.Routing {
                 ls.Add(new DebugCurve(100, 0.03, "blue",_polyline));
             return ls;
         }
-#endif
+
 
         /// <summary>
         /// smoothing the corners of the polyline
@@ -615,14 +611,14 @@ namespace Microsoft.Msagl.Routing {
         public void SmoothCorners(SmoothedPolyline edgePolyline) {
             ValidateArg.IsNotNull(edgePolyline, "edgePolyline");
 
-            Site a = edgePolyline.HeadSite; //the corner start
-            Site b; //the corner origin
-            Site c; //the corner other end
+            CornerSite a = edgePolyline.HeadSite; //the corner start
+            CornerSite b; //the corner origin
+            CornerSite c; //the corner other end
             while (Curve.FindCorner(a, out b, out c))
                 a = SmoothOneCorner(a, c, b);
         }
 
-        Site SmoothOneCorner(Site a, Site c, Site b) {
+        CornerSite SmoothOneCorner(CornerSite a, CornerSite c, CornerSite b) {
             const double mult = 1.5;
             const double kMin = 0.01;
             
@@ -670,17 +666,17 @@ namespace Microsoft.Msagl.Routing {
             bool progress = true;
             while (progress) {
                 progress = false;
-                for (Site s = underlyingPolyline.HeadSite; s != null && s.Next != null; s = s.Next) {
+                for (CornerSite s = underlyingPolyline.HeadSite; s != null && s.Next != null; s = s.Next) {
                     if (s.Turn*s.Next.Turn < 0)
                         progress = TryToRemoveInflectionEdge(ref s) || progress;
                 }
             }
         }
 
-        bool TryToRemoveInflectionEdge(ref Site s) {
+        bool TryToRemoveInflectionEdge(ref CornerSite s) {
             if (!ObstacleCalculator.ObstaclesIntersectLine(s.Previous.Point, s.Next.Point)) {
-                Site a = s.Previous; //forget s
-                Site b = s.Next;
+                CornerSite a = s.Previous; //forget s
+                CornerSite b = s.Next;
                 a.Next = b;
                 b.Previous = a;
                 s = a;
@@ -688,8 +684,8 @@ namespace Microsoft.Msagl.Routing {
             }
             if (!ObstacleCalculator.ObstaclesIntersectLine(s.Previous.Point, s.Next.Next.Point)) {
                 //forget about s and s.Next
-                Site a = s.Previous;
-                Site b = s.Next.Next;
+                CornerSite a = s.Previous;
+                CornerSite b = s.Next.Next;
                 a.Next = b;
                 b.Previous = a;
                 s = a;
@@ -697,7 +693,7 @@ namespace Microsoft.Msagl.Routing {
             }
             if (!ObstacleCalculator.ObstaclesIntersectLine(s.Point, s.Next.Next.Point)) {
                 //forget about s.Next
-                Site b = s.Next.Next;
+                CornerSite b = s.Next.Next;
                 s.Next = b;
                 b.Previous = s;
                 return true;
@@ -745,7 +741,6 @@ namespace Microsoft.Msagl.Routing {
             return RemoveCollinearVertices(ret);
         }
 
-#if TEST_MSAGL
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private void ShowIsPassable(VisibilityVertex sourceVisVertex, VisibilityVertex targetVisVertex)
         {
@@ -763,7 +758,7 @@ namespace Microsoft.Msagl.Routing {
                 dd.AddRange(Obstacles.Select(o => new DebugCurve(o)));
             LayoutAlgorithmSettings.ShowDebugCurvesEnumeration(dd);
         }
-#endif
+
 
         void CleanTheGraphForShortestPath() {
             visibilityGraph.ClearPrevEdgesTable();            

@@ -117,40 +117,8 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
         /// NOTE: polyline points should be oriented clockwise
         /// </summary>
         internal static bool LineSegmentIntersectPolyline(Point start, Point end, Polyline poly) {
-            Point segDirection = end - start;   // the segment direction vector
-            Debug.Assert(segDirection.Length > ApproximateComparer.DistanceEpsilon);
-
-            double tStart = 0;                  // the maximum entering segment parameter
-            double tEnd = 1;                    // the minimum leaving segment parameter
-
-            foreach (var p in poly.PolylinePoints) {
-                //process one edge
-                var prev = p.PrevOnPolyline;
-                Point e = prev.Point - p.Point;
-                double num = Point.CrossProduct(e, start - p.Point);
-                double den = -Point.CrossProduct(e, segDirection);
-                if (Math.Abs(den) < ApproximateComparer.Tolerance) { // segment is nearly parallel to this edge
-                    if (num < 0) return false;
-                    continue;
-                }
-
-                //intersection parameter
-                double t = num / den;
-                if (den < 0) {
-                    // segment is entering across this edge
-                    tStart = Math.Max(tStart, t);
-                    // segment enters after leaving polygon
-                    if (tStart > tEnd) return false;
-                }
-                else {
-                    // segment is leaving across this edge
-                    tEnd = Math.Min(tEnd, t);
-                    // segment leaves before entering polygon
-                    if (tStart > tEnd) return false;
-                }
-            }
-
-            return true;
+            return Curve.CurveCurveIntersectionOne(new LineSegment(start, end), poly, false) != null;
+            
         }
 
 
@@ -162,7 +130,6 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
 
 
        
-#if TEST_MSAGL
         /// <summary>
         /// check the validness of the drawing:
         /// 1. hubs are not inside loose obstacles
@@ -180,7 +147,7 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
                 
                 if (!station.IsRealNode && !HubAvoidsObstacles(station.Position, 0, obstaclesToIgnore(station))) {
                     if (LayoutAlgorithmSettings.ShowDebugCurvesEnumeration != null) {
-                        HubDebugger.ShowHubs(metroGraphData, bundlingSettings, station);
+                        HubDebugger.ShowHubsWithHighligtedStation(metroGraphData, bundlingSettings, station);
                         ShowStationWithObstaclesToIgnore(station,  obstacleTree.AllHitItems(station.Position));
                     }
                     return false;
@@ -256,6 +223,6 @@ namespace Microsoft.Msagl.Routing.Spline.Bundling {
             }
             return crossings.All(intersectionInfo => obstaclesToIgnoreForBundle.Contains((Polyline)intersectionInfo.Segment1));
         }
-#endif
+
     }
 }
